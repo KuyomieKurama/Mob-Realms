@@ -170,13 +170,15 @@ def install(args):
     directory = Path(args.dir).expanduser().absolute()
     require(not directory.is_symlink(), 'Server target must not be a symlink.')
     java = java_binary()
-    check_memory(args.xms, args.xmx)
     if (directory / MANIFEST).is_file():
         verify_install(directory)
+        memory = json.loads((directory / 'server-memory.json').read_text())
+        check_memory(memory['xms'], memory['xmx'])
         print('Installation already valid; world, mods and settings preserved.')
         if args.accept_eula:
             accept_eula(directory)
         return directory
+    check_memory(args.xms, args.xmx)
     require(not directory.exists() or (directory.is_dir() and not any(directory.iterdir())),
             'Target directory is not empty. Use a new directory; existing servers are never overwritten.')
     script_dir = Path(__file__).resolve().parent
