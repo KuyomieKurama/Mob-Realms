@@ -13,7 +13,10 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
+      - run: python3 scripts/check_resources.py
       - run: ./gradlew --no-daemon build
+      - name: Dedicated server bootstrap (no world or EULA acceptance)
+        run: ./gradlew --no-daemon :fabric-mod:runServer --args=--initSettings
       - uses: actions/upload-artifact@v4
         with:
           name: mob-realms-development

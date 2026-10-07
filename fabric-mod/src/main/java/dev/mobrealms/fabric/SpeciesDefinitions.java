@@ -4,6 +4,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.mobrealms.core.SpeciesProfile;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import java.io.*;
 import java.util.*;
 
@@ -24,6 +26,8 @@ public final class SpeciesDefinitions {
                 SpeciesProfile profile = new SpeciesProfile(id, j.get("entity_type").getAsString(),
                         j.get("gather_weight").getAsDouble(), j.get("regroup_weight").getAsDouble(),
                         j.get("carrying_capacity").getAsInt(), j.get("avoids_sun").getAsBoolean());
+                if (!BuiltInRegistries.ENTITY_TYPE.containsKey(Identifier.parse(profile.entityType())))
+                    throw new IllegalArgumentException("Unknown entity type " + profile.entityType());
                 next.put(id, profile);
             } catch (RuntimeException ex) { throw new IOException("Invalid species " + entry.getKey(), ex); }
         }

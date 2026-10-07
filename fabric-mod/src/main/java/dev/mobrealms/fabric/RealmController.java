@@ -124,7 +124,7 @@ public final class RealmController {
         boolean sunny = Math.floorMod(level.getOverworldClockTime(), 24000L) < 12000 && level.canSeeSky(mob.blockPosition()) && !level.isRaining();
         ItemEntity target = null;
         if (!sunny || !profile.avoidsSun()) {
-            var candidates = level.getEntitiesOfClass(ItemEntity.class, new AABB(home).inflate(12), e -> suitable(e, level));
+            var candidates = level.getEntitiesOfClass(ItemEntity.class, new AABB(home).inflate(12), e -> suitable(e, level) && camp.territory().equals(ChunkKey.fromBlock(dimension(level), e.blockPosition().getX(), e.blockPosition().getZ())));
             target = candidates.stream().min(Comparator.comparingDouble(mob::distanceToSqr)).orElse(null);
         }
         var goal = brain.choose(profile, new UtilityBrain.Observation(sunny, mob.getHealth() < mob.getMaxHealth() * .25,
@@ -182,7 +182,11 @@ public final class RealmController {
         if (type == null) return false;
         List<Mob> residents = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            Entity entity = type.create(level, EntitySpawnReason.EVENT);
+            Entity entity;
+            try { entity = type.create(level, EntitySpawnReason.EVENT); }
+            catch (RuntimeException ex) {
+                MobRealms.LOGGER.warn("Species {} cannot create a resident", species, ex); return false;
+            }
             if (!(entity instanceof Mob mob)) return false;
             mob.setPos(origin.getX() + .5 + (i - 1) * .6, origin.getY(), origin.getZ() + .5);
             mob.setPersistenceRequired(); residents.add(mob);
