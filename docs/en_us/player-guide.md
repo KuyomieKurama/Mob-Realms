@@ -53,3 +53,11 @@ Pending births persist across restarts and wait for a collision-free location ne
 A separate Admin tab contains 1/7/30/365-day simulation presets and queue cancellation. World & camera contains time-lapse, spectator/return controls and chunk protection. Permissions remain server-enforced. Screens refresh every five seconds; narrow layouts use arrows to navigate tabs.
 
 Acceptance: kill one resident and verify population/losses; unload/reload without another loss; supply food/housing to two survivors, simulate days and restart, checking that each pending resident appears only once.
+
+## Admin logs and larger settlements
+
+`/civ admin` → **Logs** shows the last 256 persisted simulation events, latest first, with day and settlement ID. Tooltips show full lines. Page controls browse history; the center button filters the selected settlement. Clicking a row selects its settlement. Logs are sent only to administrators and refresh every five seconds.
+
+Events cover founding, completed buildings, births, deaths, technology, explicit diplomacy actions and changing bottlenecks. Bottleneck reports are limited to once per ten seconds per settlement. This is a bounded simulation log; complete Java errors, stack traces and other mods' output remain in `logs/latest.log`.
+
+The default construction growth target is **96 residents, up from 48**. Set `settlementTargetPopulation=96` (3–256) in `config/mobrealms.properties` and restart. Existing configs without this entry also default to 96, and existing settlements can continue building. This is a planning target, not instant population or a strict birth cap. Food, housing, the 64-chunk territory limit and saved global population limits still apply. Starter camps retain three residents.

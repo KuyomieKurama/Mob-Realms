@@ -2,6 +2,9 @@
 
 ## 0.5.0-dev — M2–M4 development candidate
 
+- Admin-only paginated simulation log with latest-first ordering, settlement filter and persisted 256-entry history. Rate-limited bottleneck events aid debugging.
+- Configurable settlement construction target defaults to 96 residents instead of the hard-coded 48; existing worlds can continue growth.
+
 - Confirmed deaths immediately and idempotently remove residents, free housing and reset growth progress; chunk unloading does not count as death.
 - Pending births survive restart and wait for a collision-free spawn position; tests cover recovery, extinction and population caps.
 - Dedicated Admin tab with 1/7/30/365-day controls, queue cancellation, time-lapse, camera exits and protection. Automatic five-second refresh, compact tab navigation, disabled invalid page/queue buttons and population/growth diagnostics.

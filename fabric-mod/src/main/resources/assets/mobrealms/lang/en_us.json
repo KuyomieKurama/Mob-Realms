@@ -187,5 +187,19 @@
   "screen.mobrealms.days_1": "+1 day",
   "screen.mobrealms.days_7": "+7 days",
   "screen.mobrealms.days_30": "+30 days",
-  "screen.mobrealms.days_365": "+365 days"
+  "screen.mobrealms.days_365": "+365 days",
+  "screen.mobrealms.logs": "Logs",
+  "screen.mobrealms.logs_selected": "Selected",
+  "screen.mobrealms.logs_all": "All realms",
+  "screen.mobrealms.log_entry": "Day %s · %s · %s",
+  "screen.mobrealms.log_status": "Event log · Page %s · Latest first",
+  "screen.mobrealms.log_empty": "No recorded events for this filter.",
+  "screen.mobrealms.halted": "Simulation halted: check the server log",
+  "event.mobrealms.founded": "Settlement founded",
+  "event.mobrealms.building": "Building completed",
+  "event.mobrealms.growth": "Resident born",
+  "event.mobrealms.death": "Resident died",
+  "event.mobrealms.technology": "Technology unlocked",
+  "event.mobrealms.diplomacy": "Diplomatic action",
+  "screen.mobrealms.settlement_target": "Growth target per settlement: %s"
 }

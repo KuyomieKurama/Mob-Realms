@@ -21,6 +21,14 @@ public final class RealmDashboard {
         var player=source.getPlayerOrException();var s=c.state();var root=new JsonObject();root.addProperty("focusAdmin",focusAdmin);
         root.addProperty("day",s.day());root.addProperty("queued",s.pendingDays());root.addProperty("admin",source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER));
         root.addProperty("player",player.getUUID().toString());
+        if(source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)){
+            var logs=new JsonArray();var history=s.development().chronicle();
+            for(int i=history.size()-1;i>=0;i--){
+                String[] parts=history.get(i).split(":",3);if(parts.length!=3)continue;
+                var entry=new JsonObject();entry.addProperty("day",parts[0]);entry.addProperty("type",parts[1]);entry.addProperty("town",parts[2]);logs.add(entry);
+            }
+            root.add("logs",logs);root.addProperty("healthy",c.healthy());root.addProperty("settlementTarget",c.config().settlementTargetPopulation());
+        }
         var camps=s.camps();if(selected!=null)for(int i=0;i<camps.size();i++)if(camps.get(i).id().equals(selected)){page=i/8;break;}int pages=Math.max(1,(camps.size()+7)/8);page=Math.min(Math.max(page,0),pages-1);root.addProperty("page",page);root.addProperty("pages",pages);
         var own=s.development().nation(player.getUUID());root.addProperty("own",own.map(UUID::toString).orElse(""));
         UUID requested=selected;

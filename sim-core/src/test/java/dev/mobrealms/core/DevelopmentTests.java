@@ -13,8 +13,15 @@ public final class DevelopmentTests {
     private static void check(boolean c,String why){if(!c)throw new AssertionError(why);}
     private static void next(RealmSimulation s){s.advanceDay();s.development().daily(s,A,.2,1,2);}
     public static void main(String[] args)throws Exception{
-        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();
-        System.out.println("Passed 9 civilization scenarios.");
+        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();
+        System.out.println("Passed 10 civilization scenarios.");
+    }
+    private static void eventLog()throws Exception{
+        var s=fixture();for(int i=0;i<300;i++)s.development().event("growth",A,i);
+        var history=s.development().chronicle();check(history.size()==256,"unbounded event history");
+        check(history.getFirst().startsWith("44:")&&history.getLast().startsWith("299:"),"event ordering/ring eviction incorrect");
+        var restored=RealmStore.decode(RealmStore.encode(s));check(restored.development().chronicle().equals(history),"event history lost on restart");
+        boolean immutable=false;try{history.clear();}catch(UnsupportedOperationException expected){immutable=true;}check(immutable,"UI could mutate domain log");
     }
     private static void lifecycle()throws Exception{
         var s=fixture();var t=s.development().town(A);s.credit(A,"minecraft:bread",100);

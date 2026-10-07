@@ -187,5 +187,19 @@
   "screen.mobrealms.days_1": "+1 Tag",
   "screen.mobrealms.days_7": "+7 Tage",
   "screen.mobrealms.days_30": "+30 Tage",
-  "screen.mobrealms.days_365": "+365 Tage"
+  "screen.mobrealms.days_365": "+365 Tage",
+  "screen.mobrealms.logs": "Protokoll",
+  "screen.mobrealms.logs_selected": "Gewählte",
+  "screen.mobrealms.logs_all": "Alle Reiche",
+  "screen.mobrealms.log_entry": "Tag %s · %s · %s",
+  "screen.mobrealms.log_status": "Protokoll · Seite %s · Neueste zuerst",
+  "screen.mobrealms.log_empty": "Keine Ereignisse für diesen Filter.",
+  "screen.mobrealms.halted": "Simulation angehalten: Serverlog prüfen",
+  "event.mobrealms.founded": "Siedlung gegründet",
+  "event.mobrealms.building": "Gebäude fertiggestellt",
+  "event.mobrealms.growth": "Bewohner geboren",
+  "event.mobrealms.death": "Bewohner gestorben",
+  "event.mobrealms.technology": "Technologie freigeschaltet",
+  "event.mobrealms.diplomacy": "Diplomatische Aktion",
+  "screen.mobrealms.settlement_target": "Wachstumsziel je Siedlung: %s"
 }

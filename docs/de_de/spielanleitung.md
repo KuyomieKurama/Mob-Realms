@@ -89,3 +89,11 @@ Nachwuchs wird gespeichert, bevor er in der Welt erscheint. Fehlt ein kollisions
 Der eigene Admin-Tab bietet Simulation in 1/7/30/365 Tagen und Abbruch der Warteschlange. Unter Welt & Kamera stehen Zeitraffer, Zuschauermodus, Rückkehr und Chunk-Schutz. Ohne Adminrechte fehlt dieser Tab; Befehle prüfen die Rechte erneut. Alle Ansichten aktualisieren sich alle fünf Sekunden. Bei kleinen GUI-Skalierungen wechseln Pfeile zwischen Tabs.
 
 Abnahmetest: einen Bewohner töten, Population und Verluste prüfen; Chunk entladen/laden (keinen weiteren Verlust erwarten); mit zwei Bewohnern und ausreichend Wohnraum/Nahrung mehrere Tage simulieren, neu starten und sicherstellen, dass jedes neue Mitglied nur einmal erscheint.
+
+## Admin-Protokoll und größere Siedlungen
+
+Unter `/civ admin` → **Protokoll** stehen die letzten 256 gespeicherten Simulationsereignisse, neueste zuerst. Tag, Siedlungskennung und Ereignis werden angezeigt; der Tooltip zeigt den vollständigen Text. Seitenknöpfe blättern, der mittlere Knopf filtert auf die gewählte Siedlung. Ein Klick auf eine Zeile wählt ihre Siedlung aus. Das Protokoll ist nur für Administratoren und aktualisiert sich mit der GUI alle fünf Sekunden.
+
+Erfasst werden Gründungen, Gebäudefertigstellung, Geburten, Todesfälle, Technologien, explizite Diplomatieaktionen und wechselnde Engpässe. Engpässe werden höchstens einmal je zehn Sekunden und Siedlung aufgezeichnet, nicht bei jedem KI-Tick. Es handelt sich um ein begrenztes Simulationsprotokoll; vollständige Java-Fehler, Stacktraces und Meldungen anderer Mods stehen weiterhin in `logs/latest.log`.
+
+Das Standard-Wachstumsziel beträgt jetzt **96 statt 48 Bewohner**. Mit `settlementTargetPopulation=96` in `config/mobrealms.properties` lässt es sich zwischen 3 und 256 einstellen. Fehlt die neue Zeile in einer bestehenden Konfiguration, gilt ebenfalls 96. Änderung per Serverneustart übernehmen. Auch bestehende Siedlungen können dann weiterbauen. Das ist das Ziel der Bauplanung, keine sofortige Bevölkerungsauffüllung oder starre Geburtenobergrenze. Nahrung, Wohnraum, 64 Gebiets-Chunks und globale gespeicherte Bevölkerungslimits gelten weiter; Startlager behalten drei Bewohner.

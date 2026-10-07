@@ -24,6 +24,8 @@ public final class EconomyController {
     private final Blueprints blueprints=new Blueprints();
     private final ArrayDeque<UUID> daily=new ArrayDeque<>();
     private int cursor;
+    private final Map<UUID,String> reportedObstacle=new HashMap<>();
+    private final Map<UUID,Long> reportedAt=new HashMap<>();
     private final Map<UUID,BlockPos> targets=new HashMap<>();
     private final Map<UUID,Long> targetStarted=new HashMap<>();
     private final Map<UUID,Integer> surveys=new HashMap<>();
@@ -49,12 +51,16 @@ public final class EconomyController {
         }
         var camps=state.camps();if(camps.isEmpty())return;
         var camp=camps.get(Math.floorMod(cursor++,camps.size()));var town=state.development().town(camp.id());
+        String previous=reportedObstacle.get(camp.id());long now=server.overworld().getGameTime();
+        if(!town.obstacle.equals(previous)&&now-reportedAt.getOrDefault(camp.id(),-200L)>=200){
+            state.development().event("obstacle_"+town.obstacle,camp.id(),state.day());reportedObstacle.put(camp.id(),town.obstacle);reportedAt.put(camp.id(),now);
+        }
         ServerLevel level=level(camp);if(level==null||!level.hasChunkAt(new BlockPos(camp.x(),camp.y(),camp.z())))return;
         for(var citizen:state.residents(camp.id()))if(state.development().person(citizen.id()).pendingSpawn){spawn(level,camp,citizen.id());return;}
         checkSite(level,town);
         if(town.project!=null&&(town.project.progress<town.project.paid||town.project.next()==null)){build(null,level,camp,town);return;}
         craft(camp.id());
-        if(town.project==null&&state.population(camp.id())<48)plan(level,camp,town);
+        if(town.project==null&&state.population(camp.id())<controller.config().settlementTargetPopulation())plan(level,camp,town);
     }
     private ServerLevel level(RealmSimulation.Camp camp){for(var level:server.getAllLevels())if(RealmController.dimension(level).equals(camp.territory().dimension()))return level;return null;}
     private void checkSite(ServerLevel level,Town town){
@@ -148,7 +154,7 @@ public final class EconomyController {
     }
     private boolean build(Mob mob,ServerLevel level,RealmSimulation.Camp camp,Town town){
         var project=town.project;var tile=project.next();
-        if(tile==null){town.complete(project);town.project=null;town.obstacle="survey";state.development().event("building",camp.id(),state.day());controller.save();return true;}
+        if(tile==null){boolean completed=project.counted;town.complete(project);town.project=null;town.obstacle="survey";if(!completed)state.development().event("building",camp.id(),state.day());controller.save();return true;}
         var pos=new BlockPos(tile.x(),tile.y(),tile.z());
         if(!level.hasChunkAt(pos)||state.protectedAt(ChunkKey.fromBlock(RealmController.dimension(level),tile.x(),tile.z()))){town.obstacle="protected";return false;}
         var block=BuiltInRegistries.BLOCK.getValue(Identifier.parse(tile.block()));

@@ -12,7 +12,8 @@ import java.util.*;
 /** Responsive, paginated realm atlas. All numbers are server snapshots, never authoritative client state. */
 public final class RealmScreen extends Screen {
     private JsonObject data;
-    private int tab,peoplePage,scroll,refreshTicks,adminPage;
+    private int tab,peoplePage,scroll,refreshTicks,adminPage,logPage;
+    private boolean selectedLogs;
     private int left,top,panelW,panelH,mainX,mainW;
     private String confirm;
     private static final int GOLD=0xffe5bd7c,INK=0xff101920,PAPER=0xffe9e2d2,MUTED=0xff9caeb7,TEAL=0xff6ec9b6;
@@ -102,9 +103,11 @@ public final class RealmScreen extends Screen {
             button(mainX,top+114,mainW,"confirm",()->{send("civ speed 5");confirm=null;rebuildWidgets();},true);
             button(mainX,top+139,mainW,"cancel",()->{confirm=null;rebuildWidgets();},false);return;
         }
-        int w=(mainW-6)/2;
-        button(mainX,top+75,w,"simulation",()->{adminPage=0;rebuildWidgets();},adminPage==0);
-        button(mainX+w+6,top+75,w,"world",()->{adminPage=1;rebuildWidgets();},adminPage==1);
+        int nav=(mainW-8)/3,w=(mainW-6)/2;
+        button(mainX,top+75,nav,"simulation",()->{adminPage=0;rebuildWidgets();},adminPage==0);
+        button(mainX+nav+4,top+75,nav,"world",()->{adminPage=1;rebuildWidgets();},adminPage==1);
+        button(mainX+2*(nav+4),top+75,nav,"logs",()->{adminPage=2;logPage=0;rebuildWidgets();},adminPage==2);
+        if(adminPage==2){logControls();return;}
         if(adminPage==0){
             int[] days={1,7,30,365};
             for(int i=0;i<days.length;i++){int n=days[i];
@@ -121,6 +124,25 @@ public final class RealmScreen extends Screen {
             button(mainX+w+6,top+170,w,"creative",()->{send("civ observe creative");onClose();},false);
         }
     }
+    private void logControls(){
+        var lines=new ArrayList<JsonObject>();
+        if(data.has("logs"))for(var e:data.getAsJsonArray("logs")){
+            var entry=e.getAsJsonObject();if(!selectedLogs||str(entry,"town").equals(str(data,"selected")))lines.add(entry);
+        }
+        if(lines.isEmpty())button(mainX,top+119,mainW,"log_empty",()->{},false).active=false;
+        int count=Math.max(1,(panelH-161)/24),pages=Math.max(1,(lines.size()+count-1)/count);logPage=Math.min(logPage,pages-1);
+        for(int i=logPage*count;i<Math.min(lines.size(),(logPage+1)*count);i++){
+            var e=lines.get(i);String type=str(e,"type"),town=str(e,"town");
+            Component message=type.startsWith("obstacle_")?name("obstacle",type.substring(9)):name("event",type);
+            var label=tr("log_entry",str(e,"day"),town.substring(0,Math.min(8,town.length())),message);
+            var row=new RealmButton(mainX,top+119+(i%count)*24,mainW,20,label,()->send("realm view "+town),type.equals("death")||type.startsWith("obstacle_"));
+            row.setTooltip(net.minecraft.client.gui.components.Tooltip.create(label.copy().append("\n"+town)));addRenderableWidget(row);
+        }
+        int w=(mainW-8)/3,y=top+panelH-32;
+        button(mainX,y,w,"prev",()->{logPage--;rebuildWidgets();},false).active=logPage>0;
+        button(mainX+w+4,y,w,selectedLogs?"logs_selected":"logs_all",()->{selectedLogs=!selectedLogs;logPage=0;rebuildWidgets();},selectedLogs).active=!str(data,"selected").isEmpty();
+        button(mainX+2*(w+4),y,w,"next",()->{logPage++;rebuildWidgets();},false).active=logPage+1<pages;
+    }
     private void text(GuiGraphicsExtractor g,Component value,int x,int y,int color){g.text(font,font.plainSubstrByWidth(value.getString(),mainW),x,y,color,false);}
     private void rule(GuiGraphicsExtractor g,int y){g.fill(mainX,y,mainX+mainW,y+1,0xff34434d);}
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
@@ -133,7 +155,12 @@ public final class RealmScreen extends Screen {
         g.enableScissor(mainX,top+64,mainX+mainW,top+panelH-(tab==5?10:66));
         if(confirm==null&&(tab==0||tab==4)){g.pose().pushMatrix();g.pose().translate(0,-scroll);}
         if(confirm!=null)g.textWithWordWrap(font,tr("confirm_"+confirm),mainX,top+76,mainW,GOLD);
-        else if(tab==5){text(g,tr("admin_status",number(data,"queued")),mainX,top+101,TEAL);g.textWithWordWrap(font,tr(adminPage==0?"admin_help":"world_help"),mainX,top+199,mainW,MUTED);}
+        else if(tab==5){
+            boolean halted=data.has("healthy")&&!data.get("healthy").getAsBoolean();
+            text(g,halted?tr("halted"):tr(adminPage==2?"log_status":"admin_status",adminPage==2?logPage+1:number(data,"queued")),mainX,top+101,halted?0xffef8585:TEAL);
+            if(adminPage==0&&panelH>275)text(g,tr("settlement_target",number(data,"settlementTarget")),mainX,top+246,GOLD);
+            if(adminPage!=2)g.textWithWordWrap(font,tr(adminPage==0?"admin_help":"world_help"),mainX,top+199,mainW,MUTED);
+        }
         else if(!data.has("detail"))g.textWithWordWrap(font,tr("empty"),mainX,top+84,mainW,PAPER);
         else switch(tab){
             case 0->overview(g,d);
