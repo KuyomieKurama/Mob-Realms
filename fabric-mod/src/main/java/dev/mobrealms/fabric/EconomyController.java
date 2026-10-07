@@ -38,6 +38,7 @@ public final class EconomyController {
     private final Map<UUID,BlockPos> walkingEnd=new HashMap<>();
     private final Map<UUID,WorkProgress> walkingProgress=new HashMap<>();
     private final Map<UUID,Long> tended=new HashMap<>();
+    private final Map<UUID,Long> yielding=new HashMap<>();
     private final Map<UUID,Long> productiveAt=new HashMap<>();
     private final Map<UUID,String> wanted=new HashMap<>();
     private final Map<UUID,Long> scanned=new HashMap<>();
@@ -68,7 +69,7 @@ public final class EconomyController {
     public long sinceProgress(UUID id){Long tick=productiveAt.get(id);return tick==null?-1:Math.max(0,server.overworld().getGameTime()-tick)/20;}
     public String target(UUID id){var target=targets.get(id);return target==null?"":target.work().toShortString();}
     public void progress(UUID id){productiveAt.put(id,server.overworld().getGameTime());blockedBy.remove(id);}
-    public void forget(UUID id){targets.remove(id);targetProgress.remove(id);walkingTo.remove(id);walkingEnd.remove(id);walkingProgress.remove(id);activities.remove(id);wanted.remove(id);blockedBy.remove(id);retries.remove(id);productiveAt.remove(id);tended.remove(id);attacks.remove(id);meals.remove(id);}
+    public void forget(UUID id){targets.remove(id);targetProgress.remove(id);walkingTo.remove(id);walkingEnd.remove(id);walkingProgress.remove(id);activities.remove(id);wanted.remove(id);blockedBy.remove(id);retries.remove(id);productiveAt.remove(id);tended.remove(id);yielding.remove(id);attacks.remove(id);meals.remove(id);}
     public String activity(UUID id){return activities.getOrDefault(id,"idle");}
     public void dayCompleted(){for(var camp:state.camps())daily.add(camp.id());}
     public void step(){
@@ -143,14 +144,23 @@ public final class EconomyController {
         for(var base:town.claims)for(int side=0;side<4;side++)candidates.add(new ChunkKey(base.dimension(),base.x()+(side==0?1:side==1?-1:0),base.z()+(side==2?1:side==3?-1:0)));
         var plots=new ArrayList<>(candidates);int scan=siteSurveys.getOrDefault(camp.id(),0);siteSurveys.put(camp.id(),scan+1);
         var chunk=plots.get(Math.floorMod(scan/9,plots.size()));int offset=Math.floorMod(scan,9);
-        BlockPos center=new BlockPos(chunk.x()*16+5+(offset%3)*3,camp.y(),chunk.z()*16+5+(offset/3)*3);
+        // Leave room for the north entrance run inside this claimed plot.
+        int x=chunk.x()*16+6+(offset%3)*2,z=chunk.z()*16+10+(offset/3);
+        BlockPos center=new BlockPos(x,camp.y(),z);
         if((state.development().claimed(chunk)&&!town.claims.contains(chunk))||occupied(camp,town,chunk)||state.protectedAt(chunk)||!level.hasChunkAt(center)){town.obstacle="land";return;}
-        if(!level.dimension().equals(net.minecraft.world.level.Level.NETHER))center=level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,center);
-        if(Math.abs(center.getY()-camp.y())>8){town.obstacle="terrain";return;}
-        var tiles=blueprints.at(objective,center.getX(),center.getY(),center.getZ(),camp.species());
-        for(var t:tiles){BlockPos p=new BlockPos(t.x(),t.y(),t.z());if(!level.hasChunkAt(p)||!level.getWorldBorder().isWithinBounds(p)||(!level.isEmptyBlock(p)&&!level.getBlockState(p).canBeReplaced())){town.obstacle="terrain";return;}}
-        for(int dx=-4;dx<=4;dx++)for(int dz=-4;dz<=4;dz++)if(!level.getBlockState(center.offset(dx,-1,dz)).isSolidRender()){town.obstacle="terrain";return;}
-        if(town.claims.contains(chunk)||state.development().claim(camp.id(),chunk,state.protectedChunks())){town.project=new Project(objective,tiles);town.obstacle="materials";}
+        var snapshot=new BuildingTerrain(level,state,chunk,camp.y());
+        var outline=blueprints.at(objective,x,0,z,camp.species());
+        int minX=outline.stream().mapToInt(Tile::x).min().orElseThrow(),maxX=outline.stream().mapToInt(Tile::x).max().orElseThrow();
+        int minZ=outline.stream().mapToInt(Tile::z).min().orElseThrow(),maxZ=outline.stream().mapToInt(Tile::z).max().orElseThrow();
+        var heights=new ArrayList<Integer>();
+        for(int xx=minX;xx<=maxX;xx++)for(int zz=minZ;zz<=maxZ;zz++)heights.add(snapshot.surface(xx,zz));
+        Collections.sort(heights);int floor=heights.get(heights.size()/2);
+        if(Math.abs((long)floor-camp.y())>16){town.obstacle="terrain_relief";return;}
+        var result=TerrainPlanner.plan(blueprints.at(objective,x,floor,z,camp.species()),snapshot);
+        if(!result.accepted()){town.obstacle=result.obstacle();return;}
+        if(town.claims.contains(chunk)||state.development().claim(camp.id(),chunk,state.protectedChunks())){
+            town.project=new Project(objective,result.tiles());town.obstacle=town.project.preparationCount>0?"preparing":"materials";
+        }
     }
     public void recover(Mob mob,RealmSimulation.Camp camp,BlockPos home){
         long now=mob.level().getGameTime();
@@ -163,10 +173,14 @@ public final class EconomyController {
         activities.put(mob.getUUID(),"idle");
         var town=state.development().town(camp.id());var person=state.development().person(mob.getUUID());
         if(combat(mob,level,camp,person)){releaseResource(mob.getUUID());return true;}
+        if(yielding.getOrDefault(mob.getUUID(),0L)>level.getGameTime()){
+            activities.put(mob.getUUID(),"step_aside");return true;
+        }
         boolean basicNeeds=ProductionNeeds.needsWorkers(state.population(camp.id()),town.count(Building.FARM),town.starvation);
         if(!basicNeeds&&person.role==Role.TRADER&&travelTrade(mob,level,camp))return true;
         if(!basicNeeds&&(person.role==Role.GUARD||person.role==Role.SOLDIER)){equip(mob,camp.id());return false;}
-        if(town.project!=null && (person.role==Role.BUILDER||town.strategy==Strategy.EXPANSION)) {
+        if(town.project!=null && (person.role==Role.BUILDER||town.strategy==Strategy.EXPANSION
+            ||(town.project.next()!=null&&town.project.next().phase()==WorkPhase.CLEAR))) {
             if(build(mob,level,camp,town))return true;
         }
         // Tending requires arrival; between visits the farmer helps construction and gathering.
@@ -206,23 +220,58 @@ public final class EconomyController {
         if(mob!=null)releaseResource(mob.getUUID());
         if(tile==null){boolean completed=project.counted;town.complete(project);town.project=null;town.obstacle="survey";if(!completed)state.development().event("building",camp.id(),state.day());controller.save();return true;}
         var pos=new BlockPos(tile.x(),tile.y(),tile.z());
-        if(!level.hasChunkAt(pos)||state.protectedAt(ChunkKey.fromBlock(RealmController.dimension(level),tile.x(),tile.z()))){town.obstacle="protected";return false;}
+        var chunk=ChunkKey.fromBlock(RealmController.dimension(level),tile.x(),tile.z());
+        if(!level.hasChunkAt(pos)){town.obstacle="unloaded";return false;}
+        if(state.protectedAt(chunk)||!town.claims.contains(chunk)||!level.getWorldBorder().isWithinBounds(pos)||level.getBlockEntity(pos)!=null){town.obstacle="protected";return false;}
+        if(mob==null&&tile.phase()!=WorkPhase.BUILD){town.obstacle="preparing";return false;}
         var block=BuiltInRegistries.BLOCK.getValue(Identifier.parse(tile.block()));
-        if(level.getBlockState(pos).is(block)){project.progress++;project.paid=Math.max(project.paid,project.progress);return true;}
-        if(!level.isEmptyBlock(pos)&&!level.getBlockState(pos).canBeReplaced()){town.obstacle="blocked";return false;}
-        if(project.progress>=project.paid&&!tile.material().equals("minecraft:air")&&state.stock(camp.id()).getOrDefault(tile.material(),0L)<1){town.obstacle="materials";return false;}
-        // Approach the footprint edge; builders can reach the roof from their scaffold radius.
+        var current=level.getBlockState(pos);
+        if(current.is(block)){project.progress++;project.paid=Math.max(project.paid,project.progress);return true;}
+        boolean clearing=tile.phase()==WorkPhase.CLEAR;
+        if(clearing){
+            var cell=BuildingTerrain.classify(level,pos);
+            boolean soilChange="minecraft:dirt".equals(BuildingTerrain.salvage(tile.expected()))&&"minecraft:dirt".equals(BuildingTerrain.salvage(cell.block()));
+            if((!cell.block().equals(tile.expected())&&!soilChange)||cell.kind()==TerrainPlanner.Kind.BLOCKED||cell.kind()==TerrainPlanner.Kind.FLUID){town.obstacle="terrain_changed";return false;}
+        }else if(!current.isAir()&&!current.canBeReplaced()){town.obstacle="blocked";return false;}
+        if(!clearing&&project.progress>=project.paid&&!tile.material().equals("minecraft:air")&&state.stock(camp.id()).getOrDefault(tile.material(),0L)<1){town.obstacle="materials";return false;}
+        String activity=switch(tile.phase()){case CLEAR->"clear_site";case FOUNDATION->"foundation";case ACCESS->"access";case BUILD->"build";};
+        // Builders work from the footprint edge, including the roof and foundation scaffold radius.
         if(mob!=null&&Math.hypot(mob.getX()-tile.x(),mob.getZ()-tile.z())>5){
-            if(approach(mob,level,new BlockPos(tile.x(),project.tiles.get(0).y(),tile.z()))){activities.put(mob.getUUID(),"build");return true;}
+            if(approach(mob,level,new BlockPos(tile.x(),project.originY,tile.z()))){activities.put(mob.getUUID(),activity);return true;}
             town.obstacle="unreachable";blockedBy.put(mob.getUUID(),"unreachable");return false;
         }
+        if(clearing){
+            // No automatic yield during catch-up. Every recovered block belongs to this live extraction.
+            if(mob==null)return false;
+            if(!freeBuildingCell(level,pos.above(),camp,project,town))return false;
+            if(level.setBlock(pos,Blocks.AIR.defaultBlockState(),3)){
+                level.levelEvent(2001,pos,Block.getId(current));String item=BuildingTerrain.salvage(tile.expected());
+                if(item!=null)state.collect(controller.lease(mob.getUUID()),item,1,controller.profileFor(mob.getUUID()).carryingCapacity());
+                project.progress++;project.paid=Math.max(project.paid,project.progress);town.labor=Math.min(1000000,town.labor+1);
+                town.obstacle="clearing";progress(mob.getUUID());mob.swingForAttack(net.minecraft.world.InteractionHand.MAIN_HAND);
+                state.development().person(mob.getUUID()).reward(1);activities.put(mob.getUUID(),activity);return true;
+            }
+            return false;
+        }
+        // Do not seal a resident or player inside a newly placed solid block.
+        if(!block.defaultBlockState().getCollisionShape(level,pos).isEmpty()&&!freeBuildingCell(level,pos,camp,project,town))return false;
         boolean alreadyPaid=project.progress<project.paid;
         if(!alreadyPaid&&!tile.material().equals("minecraft:air")&&!state.consume(camp.id(),Map.of(tile.material(),1L)))return false;
         if(!level.setBlock(pos,block.defaultBlockState(),3)){
             if(!alreadyPaid&&!tile.material().equals("minecraft:air"))state.credit(camp.id(),tile.material(),1);return false;
         }
-        project.progress++;project.paid=Math.max(project.paid,project.progress);town.labor=Math.min(1000000,town.labor+1);town.obstacle="building";
-        if(mob!=null){progress(mob.getUUID());mob.swingForAttack(net.minecraft.world.InteractionHand.MAIN_HAND);state.development().person(mob.getUUID()).reward(2);activities.put(mob.getUUID(),"build");}return true;
+        project.progress++;project.paid=Math.max(project.paid,project.progress);town.labor=Math.min(1000000,town.labor+1);
+        town.obstacle=tile.phase()==WorkPhase.BUILD?"building":activity;
+        if(mob!=null){progress(mob.getUUID());mob.swingForAttack(net.minecraft.world.InteractionHand.MAIN_HAND);state.development().person(mob.getUUID()).reward(2);activities.put(mob.getUUID(),activity);}return true;
+    }
+    private boolean freeBuildingCell(ServerLevel level,BlockPos pos,RealmSimulation.Camp camp,Project project,Town town){
+        var occupants=level.getEntities((Entity)null,new net.minecraft.world.phys.AABB(pos),e->e.isAlive()&&!e.isSpectator());
+        if(occupants.isEmpty())return true;
+        for(var entity:occupants)if(entity instanceof Mob resident&&state.hasCitizen(resident.getUUID())
+            &&state.citizen(resident.getUUID()).camp().equals(camp.id())&&controller.lease(resident.getUUID())!=null){
+            if(approach(resident,level,new BlockPos(project.originX+7,project.originY,project.originZ)))yielding.put(resident.getUUID(),level.getGameTime()+100);
+        }
+        town.obstacle="occupied";return false;
     }
     private boolean occupied(RealmSimulation.Camp camp,Town town,ChunkKey chunk){
         if(chunk.equals(camp.territory()))return true;
@@ -236,7 +285,7 @@ public final class EconomyController {
             ||!level.hasChunkAt(pos)||!level.getWorldBorder().isWithinBounds(pos)||state.protectedAt(chunk)
             ||(state.development().claimed(chunk)&&!town.claims.contains(chunk))||level.getBlockEntity(pos)!=null)return false;
         if(Math.hypot(pos.getX()-camp.x(),pos.getZ()-camp.z())<4)return false;
-        for(var site:town.sites)if(Math.abs(pos.getX()-site.x())<=6&&Math.abs(pos.getZ()-site.z())<=6)return false;
+        for(var site:town.sites)if(Math.abs(pos.getX()-site.x())<=6&&pos.getZ()>=site.z()-12&&pos.getZ()<=site.z()+6)return false;
         if(town.project!=null){
             var footprint=footprints.get(camp.id());
             if(footprint==null||footprint.project()!=town.project){

@@ -1,3 +1,10 @@
+# 0.6.4-dev
+
+- Replace the flat 9x9 building-site requirement with bounded terrain cut/fill, paid foundations and a stepped entrance.
+- Shared resident clearing, real excavated cargo, entity occupancy checks and persistent preparation phases.
+- Keep building anchors independent of foundation/entrance geometry; prevent abstract completion before physical preparation.
+- Format 5 migrates formats 1–4; seven terrain/save regression scenarios and DE/EN guides.
+
 # 0.6.3-dev
 
 - Parallel material deficits, shared bounded wilderness surveys and discovered-source reuse.

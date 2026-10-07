@@ -8,7 +8,7 @@ import java.util.zip.CRC32;
 
 /** Versioned bounded binary format. No Java object deserialization. */
 public final class RealmStore {
-    private static final int MAGIC = 0x4D524C4D, VERSION = 4, MAX_BYTES = 32 * 1024 * 1024;
+    private static final int MAGIC = 0x4D524C4D, VERSION = 5, MAX_BYTES = 32 * 1024 * 1024;
     private RealmStore() {}
     public static byte[] encode(RealmSimulation state) throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();

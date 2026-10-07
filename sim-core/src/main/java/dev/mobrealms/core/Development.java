@@ -10,19 +10,34 @@ public final class Development {
     public enum Strategy { PROSPERITY, EXPANSION, SECURITY }
     public enum Treaty { WAR, HOSTILE, NEUTRAL, TRADE, NON_AGGRESSION, ALLIANCE, VASSAL }
     public enum Technology { AGRICULTURE, MASONRY, SHIELDS, FLANKING, SIEGE }
-    public record Tile(int x, int y, int z, String block, String material) {
-        public Tile { identifier(block); identifier(material); }
+    public enum WorkPhase { CLEAR, FOUNDATION, ACCESS, BUILD }
+    public record Tile(int x, int y, int z, String block, String material, WorkPhase phase, String expected) {
+        public Tile(int x,int y,int z,String block,String material){this(x,y,z,block,material,WorkPhase.BUILD,"");}
+        public Tile {
+            identifier(block); identifier(material);Objects.requireNonNull(phase);Objects.requireNonNull(expected);
+            if(!expected.isEmpty())identifier(expected);
+            if(phase==WorkPhase.CLEAR&&(!block.equals("minecraft:air")||!material.equals("minecraft:air")||expected.isEmpty()))throw new IllegalArgumentException("Invalid clearing step");
+        }
     }
     public static final class Project {
         public final Building building;
         public final List<Tile> tiles;
+        public final int preparationCount, originX, originY, originZ;
         public int progress, paid;
         public boolean counted;
         public Project(Building building, List<Tile> tiles) {
             if (tiles.isEmpty() || tiles.size() > 4096) throw new IllegalArgumentException("blueprint size");
             this.building = building; this.tiles = List.copyOf(tiles);
+            var structure=tiles.stream().filter(t->t.phase()==WorkPhase.BUILD).toList();
+            if(structure.isEmpty())throw new IllegalArgumentException("Missing structure");
+            preparationCount=tiles.size()-structure.size();
+            for(int i=0;i<tiles.size();i++)if((i<preparationCount)==(tiles.get(i).phase()==WorkPhase.BUILD))throw new IllegalArgumentException("Interleaved earthworks");
+            originX=(structure.stream().mapToInt(Tile::x).min().orElseThrow()+structure.stream().mapToInt(Tile::x).max().orElseThrow())/2;
+            originY=structure.stream().mapToInt(Tile::y).min().orElseThrow();
+            originZ=(structure.stream().mapToInt(Tile::z).min().orElseThrow()+structure.stream().mapToInt(Tile::z).max().orElseThrow())/2;
         }
         public Tile next() { return progress < tiles.size() ? tiles.get(progress) : null; }
+        public String phase(){return next()==null?"complete":next().phase().name().toLowerCase(Locale.ROOT);}
     }
     public static final class Person {
         public String species = "";
@@ -43,9 +58,7 @@ public final class Development {
         public final List<Site> sites = new ArrayList<>();
         public void complete(Project p){
             if(p.counted)return;p.counted=true;buildings.merge(p.building,1,Integer::sum);
-            int x=(p.tiles.stream().mapToInt(Tile::x).min().orElse(0)+p.tiles.stream().mapToInt(Tile::x).max().orElse(0))/2;
-            int z=(p.tiles.stream().mapToInt(Tile::z).min().orElse(0)+p.tiles.stream().mapToInt(Tile::z).max().orElse(0))/2;
-            sites.add(new Site(p.building,x,p.tiles.stream().mapToInt(Tile::y).min().orElse(0),z,true));
+            sites.add(new Site(p.building,p.originX,p.originY,p.originZ,true));
         }
         public final Set<ChunkKey> claims = new LinkedHashSet<>();
         public final EnumMap<Building,Integer> buildings = new EnumMap<>(Building.class);
@@ -153,6 +166,8 @@ public final class Development {
         if(town.project!=null&&state.residents(id).stream().allMatch(c->c.mode()==RealmSimulation.Mode.ABSTRACT)){
             Project p=town.project;
             for(int i=0;i<Math.min(32,population*4)&&p.paid<p.tiles.size();i++){
+                if(p.progress<p.preparationCount)break; // Earthworks require a loaded builder and checked terrain.
+
                 Tile tile=p.tiles.get(p.paid);if(state.protectedAt(ChunkKey.fromBlock(state.camp(id).territory().dimension(),tile.x(),tile.z())))break;if(!tile.material().equals("minecraft:air")&&!state.consume(id,Map.of(tile.material(),1L)))break;p.paid++;town.labor++;
             }
             if(p.paid==p.tiles.size()&&!p.counted){town.complete(p);event("building",id,state.day());}
@@ -213,7 +228,7 @@ public final class Development {
             out.writeInt(t.technologies.size()); for(var tech:t.technologies)out.writeUTF(tech.name());
             out.writeUTF(t.strategy.name()); for(int i=0;i<3;i++){out.writeDouble(t.rewards[i]);out.writeInt(t.trials[i]);}
             out.writeInt(t.foodDays);out.writeInt(t.starvation);out.writeInt(t.births);out.writeInt(t.research);out.writeInt(t.labor);out.writeInt(t.losses);out.writeInt(t.rangedHits);out.writeInt(t.meleeHits);out.writeLong(t.lastDay);out.writeDouble(t.rangedThreat);out.writeUTF(t.obstacle);
-            out.writeBoolean(t.project!=null);if(t.project!=null){var p=t.project;out.writeUTF(p.building.name());out.writeInt(p.progress);out.writeInt(p.paid);out.writeBoolean(p.counted);out.writeInt(p.tiles.size());for(var x:p.tiles){out.writeInt(x.x());out.writeInt(x.y());out.writeInt(x.z());out.writeUTF(x.block());out.writeUTF(x.material());}}
+            out.writeBoolean(t.project!=null);if(t.project!=null){var p=t.project;out.writeUTF(p.building.name());out.writeInt(p.progress);out.writeInt(p.paid);out.writeBoolean(p.counted);out.writeInt(p.tiles.size());for(var x:p.tiles){out.writeInt(x.x());out.writeInt(x.y());out.writeInt(x.z());out.writeUTF(x.block());out.writeUTF(x.material());out.writeUTF(x.phase().name());out.writeUTF(x.expected());}}
         }
         out.writeInt(people.size());for(var e:new TreeMap<>(people).entrySet()){uuid(out,e.getKey());var p=e.getValue();out.writeUTF(p.species);out.writeUTF(p.name);out.writeUTF(p.role.name());out.writeInt(p.experience);out.writeBoolean(p.pendingSpawn);}
         out.writeInt(relations.size());for(var e:relations.entrySet()){out.writeUTF(e.getKey());var r=e.getValue();out.writeInt(r.score);out.writeUTF(r.treaty.name());out.writeBoolean(r.overlord!=null);if(r.overlord!=null)uuid(out,r.overlord);out.writeLong(r.lastTradeDay);out.writeUTF(r.offer==null?"":r.offer.name());if(r.offer!=null){uuid(out,r.proposer);out.writeLong(r.expires);}}
@@ -231,7 +246,7 @@ public final class Development {
             for(var b:Building.values())t.buildings.put(b,bounded(in,1024));int techs=bounded(in,5);for(int i=0;i<techs;i++)t.technologies.add(Technology.valueOf(in.readUTF()));
             t.strategy=Strategy.valueOf(in.readUTF());for(int i=0;i<3;i++){t.rewards[i]=finite(in,-100,100);t.trials[i]=bounded(in,1000000);}
             t.foodDays=bounded(in,1000000);t.starvation=bounded(in,1000000);t.births=bounded(in,100000);t.research=bounded(in,10000);t.labor=bounded(in,1000000);t.losses=bounded(in,100000);t.rangedHits=bounded(in,1000000);t.meleeHits=bounded(in,1000000);t.lastDay=in.readLong();t.rangedThreat=finite(in,0,1);t.obstacle=in.readUTF();
-            if(in.readBoolean()){Building b=Building.valueOf(in.readUTF());int progress=bounded(in,4096),paid=bounded(in,4096);boolean counted=in.readBoolean();int tiles=bounded(in,4096);List<Tile> list=new ArrayList<>();for(int i=0;i<tiles;i++)list.add(new Tile(in.readInt(),in.readInt(),in.readInt(),in.readUTF(),in.readUTF()));t.project=new Project(b,list);if(progress>paid||paid>tiles||(counted&&paid!=tiles))throw new IOException("Invalid project progress");t.project.progress=progress;t.project.paid=paid;t.project.counted=counted;}
+            if(in.readBoolean()){Building b=Building.valueOf(in.readUTF());int progress=bounded(in,4096),paid=bounded(in,4096);boolean counted=in.readBoolean();int tiles=bounded(in,4096);List<Tile> list=new ArrayList<>();for(int i=0;i<tiles;i++){int x=in.readInt(),y=in.readInt(),z=in.readInt();String block=in.readUTF(),material=in.readUTF();list.add(version>=5?new Tile(x,y,z,block,material,WorkPhase.valueOf(in.readUTF()),in.readUTF()):new Tile(x,y,z,block,material));}t.project=new Project(b,list);if(progress>paid||paid>tiles||(counted&&paid!=tiles)||(progress<t.project.preparationCount&&paid>progress))throw new IOException("Invalid project progress");t.project.progress=progress;t.project.paid=paid;t.project.counted=counted;}
         }
         people.clear();int persons=bounded(in,100000);if(persons!=state.citizenCount())throw new IOException("Citizen count mismatch");for(int i=0;i<persons;i++){UUID id=uuid(in);if(!state.hasCitizen(id)||people.containsKey(id))throw new IOException("Invalid citizen development");var p=new Person();p.species=in.readUTF();identifier(p.species);if(version>=4){p.name=in.readUTF();if(p.name.isBlank()||p.name.length()>100)throw new IOException("Invalid resident name");}p.role=Role.valueOf(in.readUTF());p.experience=bounded(in,10000);p.pendingSpawn=in.readBoolean();people.put(id,p);}
         int pairs=bounded(in,523776);for(int i=0;i<pairs;i++){String key=in.readUTF();String[] ids=key.split("/");if(ids.length!=2||!key.equals(pair(UUID.fromString(ids[0]),UUID.fromString(ids[1]))))throw new IOException("Invalid relation");var r=new Relation();r.score=in.readInt();if(r.score< -100||r.score>100)throw new IOException("Invalid score");r.treaty=Treaty.valueOf(in.readUTF());r.overlord=in.readBoolean()?uuid(in):null;r.lastTradeDay=in.readLong();String offer=in.readUTF();if(!offer.isEmpty()){r.offer=Treaty.valueOf(offer);r.proposer=uuid(in);r.expires=in.readLong();if(!r.proposer.toString().equals(ids[0])&&!r.proposer.toString().equals(ids[1]))throw new IOException("Invalid proposer");}if(relations.put(key,r)!=null)throw new IOException("Duplicate relation");}

@@ -198,9 +198,10 @@ public final class RealmScreen extends Screen {
         g.fill(mainX,top+213,mainX+mainW,top+219,0xff0b1218);g.fill(mainX,top+213,mainX+(int)((long)mainW*progress/total),top+219,TEAL);
         text(g,tr("physical_progress",number(d,"placed"),progress,total),mainX,top+226,MUTED);
         text(g,name("obstacle",str(d,"obstacle")),mainX,top+243,GOLD);rule(g,top+259);
+        text(g,tr("construction_phase",name("phase",str(d,"phase")),number(d,"prepared"),number(d,"preparation")),mainX,top+269,TEAL);
         var stock=d.getAsJsonObject("stock");int columns=Math.max(1,mainW/135),i=0;
         for(var entry:stock.entrySet()){
-            int x=mainX+(i%columns)*(mainW/columns),y=top+270+(i/columns)*24;if(i>=24)break;
+            int x=mainX+(i%columns)*(mainW/columns),y=top+290+(i/columns)*24;if(i>=24)break;
             var item=BuiltInRegistries.ITEM.getValue(Identifier.parse(entry.getKey()));g.item(new ItemStack(item),x,y-4);
             g.text(font,font.plainSubstrByWidth(item.getName(new ItemStack(item)).getString(),mainW/columns-54),x+20,y,PAPER,false);
             g.text(font,entry.getValue().getAsString(),x+mainW/columns-32,y,TEAL,false);i++;

@@ -16,3 +16,11 @@ tasks.register("developmentTest", JavaExec) {
 }
 tasks.named("check") { dependsOn developmentTest }
 tasks.named("test") { dependsOn developmentTest }
+
+tasks.register("terrainTest", JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "dev.mobrealms.core.TerrainTests"
+}
+tasks.named("check") { dependsOn terrainTest }
+tasks.named("test") { dependsOn terrainTest }

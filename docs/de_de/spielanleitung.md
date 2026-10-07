@@ -1,8 +1,8 @@
-# Mob Realms spielen — 0.6.3-dev
+# Mob Realms spielen — 0.6.4-dev
 
 ## Installation und Einstieg
 
-Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.3-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
+Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.4-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
 
 Beginne in einer Testwelt auf Normal. `/realm` öffnet den Reichsatlas. Er zeigt einen Server-Schnappschuss; **Aktualisieren** lädt aktuelle Werte. Gold markiert die gewählte Siedlung, Türkis aktive Entwicklung. Übersicht und Forschung lassen sich mit dem Mausrad scrollen. Die Karte zeigt beanspruchte Chunks der aktuellen Siedlungsseite und Dimension, keine Landschaft.
 
@@ -10,7 +10,7 @@ Beginne in einer Testwelt auf Normal. `/realm` öffnet den Reichsatlas. Er zeigt
 
 Nach der konfigurierten Schonfrist suchen natürliche Gründungen in geladenen Gebieten bei Spielern nach freien Bauplätzen. Ein Lager startet mit drei Bewohnern, Dach, Banner und einmaligen Nahrungsvorräten. Wilde Mobs bleiben Vanilla-Mobs. Auf engen, geschützten, unebenen oder bereits belegten Flächen entsteht kein Lager.
 
-Zuerst wird ein Feld geplant, dann Wohnraum, Lager und Werkstatt, später Markt und Verteidigung. Im Atlas siehst du das nächste Bauziel und den aktuellen Engpass. Baumeister setzen Blöcke einzeln. Sammler und Bergleute beschaffen dafür echte Ressourcen aus ungeschützten, eigenen Rohstoff-Chunks und angrenzendem geladenem Land. Bauflächen werden nicht abgebaut. Neue Gebäude brauchen eine freie, ebene Fläche von bis zu 9 × 9 Blöcken. Es werden keine Chunks zwangsgeladen.
+Zuerst wird ein Feld geplant, dann Wohnraum, Lager und Werkstatt, später Markt und Verteidigung. Im Atlas siehst du das nächste Bauziel und den aktuellen Engpass. Baumeister setzen Blöcke einzeln. Sammler und Bergleute beschaffen dafür echte Ressourcen aus ungeschützten, eigenen Rohstoff-Chunks und angrenzendem geladenem Land. Bauflächen werden nicht abgebaut. Neue Gebäude passen ihren Bauplatz durch Erdarbeiten, Fundamente und einen Zugang an das Gelände an. Es werden keine Chunks zwangsgeladen.
 
 Holz wird zu Baumaterial verarbeitet, Weizen zu Brot; Werkstätten verarbeiten Roheisen mit Kohle. Baustoffkosten sind vereinfachte Baupakete, keine exakte Abbildung aller Vanilla-Rezepte. Beispielsweise bezahlt Holz auch Holzmöbel. Dekorative Farmblöcke gehören zur Feldvorlage.
 
@@ -74,11 +74,11 @@ Die Konfiguration unter `config/mobrealms.properties` enthält Wachstumsdauer, A
 
 ## Abnahmetest und Grenzen
 
-Teste zuerst in einer Kopie deiner Welt: Lager bei Wald und ebener Freifläche gründen, Vorräte spenden, Bau bis Feld und Haus beobachten, 30 Tage simulieren, Rollen und Handel prüfen, speichern/neustarten und Baufortschritt vergleichen. Prüfe mit zwei Spielern, dass Verträge Zustimmung benötigen und fremde Rollen nicht geändert werden können. Teste UI bei verschiedenen GUI-Skalierungen und Zeitraffer anschließend wieder auf 1× zurücksetzen.
+Teste zuerst in einer Kopie deiner Welt: Lager bei Wald gründen und umliegendes Hügelland zum Bauen nutzen, Vorräte spenden, Bau bis Feld und Haus beobachten, 30 Tage simulieren, Rollen und Handel prüfen, speichern/neustarten und Baufortschritt vergleichen. Prüfe mit zwei Spielern, dass Verträge Zustimmung benötigen und fremde Rollen nicht geändert werden können. Teste UI bei verschiedenen GUI-Skalierungen und Zeitraffer anschließend wieder auf 1× zurücksetzen.
 
-0.6.3-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
+0.6.4-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
 
-Speicherformat 4 liest alte Formate 1/2/3. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.
+Speicherformat 5 liest alte Formate 1/2/3/4. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.
 
 ## Bevölkerungsverluste und Admin-Ansicht
 
@@ -113,7 +113,7 @@ Gesellschaftlicher Rang, Beruf und Veteranenstufe sind getrennt. Der Rang richte
 
 Der erste Bewohner übernimmt die Führung, ohne seinen Beruf aufzugeben. Beim Tod oder Wegzug folgt deterministisch ein verbliebener Bewohner; die Führung wird gespeichert. In deiner Nation ernennt die Rollenwahl **Anführer** den gewählten Bewohner zum neuen Oberhaupt. Führungsränge sind hier Titel und Mitgliedschaft, keine fertige Erbfolge- oder Bürgerkriegsmechanik. Bei Bevölkerungsverlusten können Entwicklungsstand und Titel zurückgehen. Namen und aktuelle Ränge stehen am Mob und im Bewohner-Tab; Tooltips zeigen zusätzlich Beruf, Veteranenstufe und UUID.
 
-Speicherformat 4 migriert Formate 1–3 automatisch. Vor dem Update ein Backup anlegen; alte Modstände können Format 4 nicht lesen. Teste nach dem Update Namen, Anwerben, Rangwechsel durch Wachstum und Tod des Oberhaupts sowie einen Neustart.
+Speicherformat 5 migriert Formate 1–4 automatisch. Vor dem Update ein Backup anlegen; Modstände bis 0.6.3 können Format 5 nicht lesen. Teste nach dem Update Namen, Anwerben, Rangwechsel durch Wachstum und Tod des Oberhaupts sowie einen Neustart.
 
 ## Wenn nur einzelne Siedlungen arbeiten (0.6.1)
 
@@ -156,9 +156,27 @@ Die Bewohneransicht zeigt Operatoren jetzt eine zusätzliche Arbeitszeile: bevor
 
 ### Abnahme in einer Testwelt
 
-1. Bestehende Welt sichern, Client und Server auf 0.6.3-dev aktualisieren. Eine Creeper-/Illager-Siedlung nahe natürlichem Holz beobachten: Material, Zielkoordinaten, Vorräte und letzter Arbeitserfolg müssen sich ändern; nicht nur die Zielbezeichnung.
+1. Bestehende Welt sichern, Client und Server auf 0.6.4-dev aktualisieren. Eine Creeper-/Illager-Siedlung nahe natürlichem Holz beobachten: Material, Zielkoordinaten, Vorräte und letzter Arbeitserfolg müssen sich ändern; nicht nur die Zielbezeichnung.
 2. Holz hinter einer Wand bzw. unerreichbar oberhalb des Mobs anbieten und einen zweiten erreichbaren Bestand belassen. Neuversuche müssen steigen; das erste Ziel darf nicht sofort erneut gewählt werden.
 3. Lager mit Kirsch- oder Blasseichenholz in Reichweite testen. Zusätzlich ohne erreichbares Holz, aber mit Stein/Erde: andere fehlende Baustoffe müssen gesammelt werden. Ohne jegliche passende Quelle ist eine Blockade korrekt.
 4. Zombies bei Tag und Nacht beobachten, optional Helm ausrüsten. „Warte auf Nacht“ muss bei Nacht enden. Tage vorsimulieren allein ist dafür kein Test.
 5. Einen Bauern vom Feld abtrennen: kein Erfahrungsgewinn durchs bloße Anlaufen. Nach Wiederherstellen des Wegs Pflege und anschließende Mitarbeit beobachten.
 6. Geschützte Chunks und fremde Claims kontrollieren: keine Entnahme. Abbau, Lieferung, Baufortschritt und Neustart prüfen. Der automatisierte Build ersetzt diese Spielprüfung nicht.
+
+
+## Bauen auf unebenem Gelände (0.6.4)
+
+Eine fertig planierte 9 × 9-Fläche ist nicht mehr nötig. Die Planung vermisst das Baufeld, wählt die mittlere Geländehöhe und erzeugt einen gespeicherten Arbeitsplan:
+
+1. **Freiräumen:** natürliche Hindernisse und höher liegendes Erdreich im Bauvolumen von oben nach unten entfernen. Alle verfügbaren Arbeiter können helfen. Nutzbarer Aushub wird als reale Fracht abgeliefert.
+2. **Fundament:** tiefere Stellen bis zum Untergrund mit bezahlten Bruchsteinblöcken auffüllen. Die Reihenfolge ist von unten nach oben.
+3. **Zugang:** einen drei Blöcke breiten, gestuften Eingang an der Nordseite anlegen, mit höchstens einer Blockhöhe je Stufe.
+4. **Hochbau:** die normale Gebäudevorlage auf dieser Unterlage bauen. Hausposition und Wohnraum beziehen sich auf das Gebäude, nicht auf die Unterkante des Fundaments.
+
+Die Übersicht zeigt die Phase und erledigte Vorarbeiten. Bewohner versuchen belegte Baufelder freizumachen; Spieler werden nicht wegteleportiert und nicht eingemauert. Unter einer dort stehenden Entität wird kein geplanter Bodenblock abgetragen. Geschützte Chunks, fremdes Territorium und Block-Entities bleiben ausgeschlossen. Wird ein erfasster Block vor seiner Bearbeitung verändert, stoppt der betroffene Arbeitsschritt mit einer Meldung.
+
+**Grenzen:** je Bauplatz höchstens vier Blöcke Abtrag und sechs Blöcke Fundamenttiefe, maximal fünf Blöcke Höhenunterschied am fünf Schritte langen Zugang. Ungeeignete steile Stellen werden verworfen und weitere Standorte geprüft. Wasser/Lava, unbekannte feste Strukturen, fehlender tragfähiger Boden oder ungeladene Bereiche bleiben Hindernisse. Die Gebäude sind weiterhin Vorlagen; dies ist kein freier Architektur- oder Brückenplaner. Das kleine Gründungsdach benötigt weiterhin eine freie, tragfähige 3 × 3-Stelle. Bereits gegründete Siedlungen verwenden die neue Geländeplanung automatisch für neue Projekte.
+
+Erdarbeiten brauchen geladene Bewohner. Die abstrakte Simulation darf erst nach den tatsächlich erledigten Vorarbeiten den weiteren Bau aus Vorräten vorfinanzieren. Dadurch entstehen keine fertig gemeldeten Häuser über unangetastetem Gelände. Arbeitsphasen, Ausgangsblöcke und Fortschritt werden in **Speicherformat 5** gespeichert; laufende Projekte aus Format 4 behalten ihre Fortschritte. Ein Downgrade auf 0.6.3 benötigt das Welt-Backup.
+
+**Im Spiel prüfen:** Eine vorhandene Siedlung neben einem Hang mit zwei bis vier Blöcken Höhenunterschied geladen halten. In der Übersicht sollten Freiräumen → Fundament/Zugang → Hochbau erscheinen; die sichtbaren Änderungen müssen dazu passen. Vorräte und Aushub prüfen. Während der Vorbereitung speichern und neu starten: keine doppelte Bezahlung oder neu begonnene Baustelle. Danach Eingang, Wohnraum und Bewohnerwege prüfen. Einen benachbarten geschützten Chunk und eine Truhe kontrollieren: unverändert. An Wasser und extremen Klippen soll die Planung eine andere Stelle suchen. Für den Client-Test: `./gradlew runClient`.

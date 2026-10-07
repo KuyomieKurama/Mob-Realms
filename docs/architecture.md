@@ -45,8 +45,11 @@ Each milestone includes complete source/resources, pinned build and Gradle wrapp
 
 ## M2–M4 implementation checkpoint
 
-`RealmSimulation` owns citizen identity, leases, resident indexes, cargo and inventories. `Development` owns towns, roles, construction reservations, claims, reputation, treaties, consent offers, technology, veterans and daily bandit state. `RealmStore` format 4 serializes both, resident names and leadership; formats 1/2/3 migrate on load.
+`RealmSimulation` owns citizen identity, leases, resident indexes, cargo and inventories. `Development` owns towns, roles, construction reservations, claims, reputation, treaties, consent offers, technology, veterans and daily bandit state. `RealmStore` format 5 serializes both, resident names and leadership; formats 1/2/3/4 migrate on load.
 
 `EconomyController` executes loaded extraction/building/trader/combat actions and one queued town report per update. `Blueprints` validates seven datapack templates and snapshots each accepted project. `SettlerEntity` is a custom humanoid NPC. `NationCommands` validates mutations server-side; `RealmDashboard` sends bounded JSON snapshots. Client-only `RealmScreen` renders the atlas; `SettlerRenderer` renders skin/equipment layers.
 
 The original roadmap above remains the target, not a claim that all goals are shipped. Current towns are single-settlement polities, emissaries are commands rather than physical actors, technology is a fixed five-step sequence, and only known farms/planned construction operate abstractly. There is no autonomous unloaded terrain discovery, broad species-specific doctrine, multi-city government or full offline catch-up. Performance budgets are scheduling targets, not hard guarantees around individual Minecraft calls.
+
+
+Terrain construction uses the pure `TerrainPlanner` against `BuildingTerrain`, a bounded read-only snapshot of a loaded plot. `Tile` stores a work phase and an expected block ID for clearing. Ordered work is clearing, foundations, entrance and the original structure. `Project` derives the building anchor from structural tiles only. Preparation is never funded by abstract daily ticks until physically completed. Runtime effects recheck claims/protection, block entities, expected terrain and occupancy. Format 5 serializes phase/expectation per tile; older tiles migrate as ordinary BUILD operations.

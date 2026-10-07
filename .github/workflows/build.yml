@@ -28,9 +28,9 @@ jobs:
           unset JAVA_HOME JAVA_BIN
           export PATH="$RUNNER_TEMP/old-java-bin:$PATH"
           export XDG_DATA_HOME="$RUNNER_TEMP/mobrealms-java-data"
-          ./scripts/install-server.sh --dir "$RUNNER_TEMP/mob realms server" --mod fabric-mod/build/libs/mob-realms-0.6.3-dev.jar --xms 512M --xmx 1G
+          ./scripts/install-server.sh --dir "$RUNNER_TEMP/mob realms server" --mod fabric-mod/build/libs/mob-realms-0.6.4-dev.jar --xms 512M --xmx 1G
           "$RUNNER_TEMP/mob realms server/start-server.sh" --check
-          ./scripts/install-server.sh --dir "$RUNNER_TEMP/mob realms server" --mod fabric-mod/build/libs/mob-realms-0.6.3-dev.jar --xms 512M --xmx 1G
+          ./scripts/install-server.sh --dir "$RUNNER_TEMP/mob realms server" --mod fabric-mod/build/libs/mob-realms-0.6.4-dev.jar --xms 512M --xmx 1G
       - uses: actions/upload-artifact@v4
         with:
           name: mob-realms-development

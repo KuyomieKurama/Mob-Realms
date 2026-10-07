@@ -1,12 +1,12 @@
-# Playing Mob Realms — 0.6.3-dev
+# Playing Mob Realms — 0.6.4-dev
 
-Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.3-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
+Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.4-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
 
 ## Settlements
 
 Start in a Normal-difficulty test world. `/realm` opens the navy/gold/teal realm atlas. Refresh retrieves a server snapshot; overview and research scroll with the mouse wheel. The map shows claimed chunks on the selected page and dimension, without terrain.
 
-Natural founding searches loaded, clear, unprotected land near players after the configured grace period. Three residents receive a starter shelter, banner and initial food. Wild mobs retain vanilla behavior. Construction priorities are farms, housing, storage, workshops, markets and defenses. Buildings require flat, empty sites up to 9 × 9 blocks. The atlas reports the current objective and obstacle.
+Natural founding searches loaded, clear, unprotected land near players after the configured grace period. Three residents receive a starter shelter, banner and initial food. Wild mobs retain vanilla behavior. Construction priorities are farms, housing, storage, workshops, markets and defenses. Buildings now adapt their plots with clearing, cut/fill foundations and a stepped entrance. The atlas reports the current objective and obstacle.
 
 Builders place blocks and consume inventory. Gatherers and miners extract finite resources from unprotected commons and adjacent loaded land; building sites are excluded. Wood becomes construction material, wheat becomes bread, and workshops smelt raw iron with coal. Construction costs are simplified material packages, not exact vanilla recipes. No chunks are force-loaded.
 
@@ -38,11 +38,11 @@ Daily reports score food, labor and losses. A bounded bandit selects prosperity,
 
 ## Acceptance and limitations
 
-Test a copy of your world: establish a camp near wood and flat ground; donate supplies; observe farm/house construction; queue 30 days; trade and assign roles; restart and compare progress. With two players, verify treaty consent and ownership restrictions. Check multiple GUI scales. Reset time-lapse to 1× afterwards.
+Test a copy of your world: establish a camp near wood and surrounding rolling terrain; donate supplies; observe farm/house construction; queue 30 days; trade and assign roles; restart and compare progress. With two players, verify treaty consent and ownership restrictions. Check multiple GUI scales. Reset time-lapse to 1× afterwards.
 
 This is a development candidate, not a gameplay-validated release. Automated tests do not validate navigation, combat, rendering or multiplayer behavior. Each settlement is one polity; multi-city countries, automatic repairs, roads, full underground mines, dynamic technology trees and quests are not implemented. Terrain/resource scarcity can halt development; the atlas reports why.
 
-Save format 4 reads formats 1/2/3. Downgrading requires restoring a full world backup. The stopped-server upgrader creates one; update the client JAR too.
+Save format 5 reads formats 1/2/3/4. Downgrading requires restoring a full world backup. The stopped-server upgrader creates one; update the client JAR too.
 
 ## Deaths, births and administration
 
@@ -70,7 +70,7 @@ Social rank is separate from job and veteran level. At 200 experience the reside
 
 The first resident leads without losing their job. Death or recruitment away selects a remaining successor deterministically; leadership persists. Assigning Leader in your nation appoints that resident. This is basic leadership membership, not a full succession/civil-war system. Names and ranks appear on mobs and in Residents; tooltips include job, veteran level and UUID.
 
-Save format 4 migrates formats 1–3. Back up before updating; older builds cannot read format 4. Acceptance: compare identities across recruitment and restart, advance settlement stages, and kill the leader to check succession.
+Save format 5 migrates formats 1–4. Back up before updating; builds through 0.6.3 cannot read format 5. Acceptance: compare identities across recruitment and restart, advance settlement stages, and kill the leader to check succession.
 
 ## Uneven settlement activity (0.6.1)
 
@@ -111,3 +111,16 @@ Unprotected undead deliberately shelter by day. The UI distinguishes waiting for
 `/civ simulate 30` does not run 30 days of physical work or advance daylight. Use `/civ speed 5` to watch physical work in loaded chunks, then restore `/civ speed 1`. A full survey is 12,544 columns shared among available worker updates. Missing resources, unloaded terrain and unsuitable construction ground can still block growth.
 
 Manual acceptance: observe extraction/stock/build progress in existing towns; obstruct one source while leaving another accessible and check retries; test cherry/pale oak and a town missing wood but with other needed materials; verify undead resume at night or with a helmet; block a farmer's route and confirm no walking XP; check protected/foreign territory and restart. No interactive game-world acceptance was performed by the automated build.
+
+
+## Building on uneven ground (0.6.4)
+
+A pre-flattened 9 × 9 plot is no longer required. The survey chooses a median ground level and saves four stages: clear natural obstacles and higher ground, build paid stone foundations from the bottom up, add a three-block-wide stepped north entrance, then construct the original building. Usable excavated material travels as resident cargo. Foundation blocks consume real cobblestone. Building anchors and housing stay at the structure level.
+
+The overview displays the stage and preparation progress. Residents try to leave occupied construction cells; players are not teleported or encased. Planned ground is not removed from under an occupying entity. Protected chunks, foreign claims, block entities and unexpected terrain changes stop the relevant operation.
+
+Per plot: up to four blocks of cutting, six blocks of foundation depth and five blocks of elevation change along a five-step entrance. Excessive cliffs, water/lava, unknown solid structures, missing support and unloaded land cause a different plot to be considered. This remains template construction, not arbitrary architecture or bridge design. The initial camp shelter still needs a clear, firm 3 × 3 location. Existing settlements automatically use the new planning for new projects.
+
+Preparation needs loaded workers; abstract construction funding starts only after actual terrain preparation. Save format 5 retains phases, expected source blocks and progress and migrates formats 1–4. A downgrade to 0.6.3 needs the world backup.
+
+Manual acceptance: observe an existing settlement build on a two-to-four-block slope, check excavation/cargo/material costs and stage changes, restart mid-preparation, and verify the completed entrance, housing and navigation. Protected land and a chest must remain intact. Water or an extreme cliff should lead to another plot. Launch client testing with `./gradlew runClient`. Automated tests do not replace this gameplay acceptance.
