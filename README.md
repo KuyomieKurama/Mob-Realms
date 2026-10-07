@@ -8,6 +8,8 @@ Minecraft mobs establish camps and gather materials, with a server-side simulati
 
 - [Spielanleitung (Deutsch)](docs/de_de/spielanleitung.md)
 - [Player guide (English)](docs/en_us/player-guide.md)
+- [Server installieren (Deutsch)](docs/de_de/server-installation.md)
+- [Server installation (English)](docs/en_us/server-installation.md)
 - [Build, tests and dependency provenance](docs/development.md)
 - [Architecture and roadmap](docs/architecture.md)
 - [Changelog](CHANGELOG.md)

@@ -4,3 +4,7 @@
 .idea/
 .vscode/
 *.log
+
+__pycache__/
+*.pyc
+/mob-realms-server/

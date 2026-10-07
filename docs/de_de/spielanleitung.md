@@ -96,3 +96,5 @@ Sichere vor Wiederherstellung den gesamten Weltordner. Bewohner-Entities und Mod
 - Tagsüber Schutzsuche prüfen und sich außerhalb des Gebietes aufhalten: Die Mod darf keine Chunks zwangsweise laden.
 
 Diese Spieltests sind noch nicht als bestanden bestätigt. Automatisierte Kerntests ersetzen sie nicht.
+
+[Automatische Serverinstallation](server-installation.md)

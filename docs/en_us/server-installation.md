@@ -1,0 +1,54 @@
+# Automated Linux server installation
+
+Installs Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and Mob Realms 0.1.0-dev using official Fabric Installer 1.1.2.
+
+Requirements: Bash, Python 3.10+, **Java 25**, HTTPS access and at least 2 GiB free disk space. Building a missing mod JAR also requires the full JDK 25 and access to Gradle/Maven. No Python packages, sudo, system package changes, firewall changes or service installation are used.
+
+From the repository's `feat/m1-foundation` branch:
+
+```sh
+./scripts/install-server.sh --dir "$HOME/mob-realms-server"
+```
+
+If the built mod is missing, this runs `./gradlew --no-daemon build` with core tests first. Alternatively supply an existing normal mod JAR (not the sources JAR):
+
+```sh
+./scripts/install-server.sh --dir "$HOME/mob-realms-server" \
+  --mod /path/mob-realms-0.1.0-dev.jar --xms 1G --xmx 4G
+```
+
+Installation downloads the server/libraries, creates `mods/`, copies both required mods and initializes server settings without loading a world.
+
+## Check and start
+
+```sh
+"$HOME/mob-realms-server/start-server.sh" --check
+```
+
+This checks dependencies without starting. It reports EULA status, but a missing acceptance only blocks a real start.
+
+Read the [Minecraft EULA](https://www.minecraft.net/eula). If you agree, manually set `eula=true` in the server's `eula.txt`, then run:
+
+```sh
+"$HOME/mob-realms-server/start-server.sh"
+```
+
+After reading the EULA, explicit acceptance and immediate startup are also available:
+
+```sh
+./scripts/install-server.sh --dir "$HOME/mob-realms-server" --accept-eula --start
+```
+
+`--start` alone does not bypass acceptance. The server runs in the foreground; enter `stop` to shut down cleanly. A lock blocks another managed start in the same directory.
+
+## Checks and limits
+
+The scripts verify Java exactly 25, valid Xms/Xmx settings, detected host/container memory limits, write access, required files and their stored SHA-256 hashes, pinned mod versions, duplicate top-level mod IDs, client-only mods and EULA acceptance. Additional mods' complete dependency constraints are resolved by Fabric during bootstrap, not by a custom version resolver.
+
+Fabric Installer/API downloads use HTTPS and upstream Maven SHA-256 checksums. The official installer downloads Minecraft and loader libraries; their installed files are then recorded in a local integrity manifest. That manifest is not signed protection against intentional tampering.
+
+Defaults are Xms 1G / Xmx 4G plus a checked minimum 256 MiB reserve. Leave additional memory for the OS. Select Java through JAVA_BIN (one executable), JAVA_HOME, or PATH. Override memory for one launch with `start-server.sh --xms 512M --xmx 2G`, or edit `server-memory.json` for persistent changes.
+
+The installation is staged before being moved into a fresh/empty destination. Existing non-empty unmanaged directories are rejected. Rerunning against a valid managed server only verifies it and preserves world, mods and settings; new memory flags do not overwrite saved settings. Updates and world migrations are not automatic. Install new versions separately and back up worlds before migrating.
+
+Installed files include `start-server.sh`, `server_manager.py`, `server-memory.json`, `mobrealms-install.json`, `server.properties`, `eula.txt`, and the `mods/` directory. The start scripts work independently of the repository. Restore original managed files or use a fresh installation if integrity checks fail; do not blindly change checksums.

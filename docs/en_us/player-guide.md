@@ -96,3 +96,5 @@ Back up the whole world before recovery. Entity files and mod state must agree, 
 - Verify daylight sheltering and that distant camps do not force-load chunks.
 
 These gameplay checks have not yet been confirmed as passed. Core tests do not replace them.
+
+[Automated server installation](server-installation.md)

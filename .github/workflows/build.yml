@@ -14,9 +14,16 @@ jobs:
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
       - run: python3 scripts/check_resources.py
+      - run: python3 -m unittest discover -s scripts/tests -v
+      - run: bash -n scripts/install-server.sh scripts/start-server.sh
       - run: ./gradlew --no-daemon build
       - name: Dedicated server bootstrap (no world or EULA acceptance)
         run: ./gradlew --no-daemon :fabric-mod:runServer --args=--initSettings
+      - name: Install a real server and check dependencies without starting a world
+        run: |
+          ./scripts/install-server.sh --dir "$RUNNER_TEMP/mob realms server" --mod fabric-mod/build/libs/mob-realms-0.1.0-dev.jar --xms 512M --xmx 1G
+          "$RUNNER_TEMP/mob realms server/start-server.sh" --check
+          ./scripts/install-server.sh --dir "$RUNNER_TEMP/mob realms server" --mod fabric-mod/build/libs/mob-realms-0.1.0-dev.jar --xms 512M --xmx 1G
       - uses: actions/upload-artifact@v4
         with:
           name: mob-realms-development

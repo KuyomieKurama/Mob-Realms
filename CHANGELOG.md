@@ -4,6 +4,9 @@
 
 ### Added
 
+- Linux server installer, verified Fabric downloads, pre-start dependency/integrity checks, EULA gate and repeat-install protection.
+- Eleven installer failure/success scenarios plus real installation smoke test in CI.
+
 - Java 25 / Minecraft 26.3 multi-project Fabric build with official example wrapper.
 - Independent simulation core: camps, stable citizen IDs, utility scores, cargo, stocks and protected chunks.
 - Versioned checksummed saves, previous-save backup and stale-lease protection across simulation handoffs.
