@@ -1,10 +1,10 @@
 # Automated Linux server installation
 
-Installs Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and Mob Realms 0.2.0-dev using official Fabric Installer 1.1.2.
+Installs Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and Mob Realms 0.5.0-dev using official Fabric Installer 1.1.2.
 
 Requirements: Bash, Python 3.10+, HTTPS access and at least 2 GiB free disk space. **Java 25 is installed automatically when unavailable.** Building a missing mod JAR requires access to Gradle/Maven; a missing full JDK is provisioned too. No Python packages, sudo, system package changes, firewall changes or service installation are used.
 
-From the repository's `feat/m1-foundation` branch:
+From the repository's `feat/m2-m4-realms` branch:
 
 ```sh
 ./scripts/install-server.sh --dir "$HOME/mob-realms-server"
@@ -14,7 +14,7 @@ If the built mod is missing, this runs `./gradlew --no-daemon build` with core t
 
 ```sh
 ./scripts/install-server.sh --dir "$HOME/mob-realms-server" \
-  --mod /path/mob-realms-0.2.0-dev.jar --xms 1G --xmx 4G
+  --mod /path/mob-realms-0.5.0-dev.jar --xms 1G --xmx 4G
 ```
 
 Installation downloads the server/libraries, creates `mods/`, copies both required mods and initializes server settings without loading a world.
@@ -61,18 +61,18 @@ The JDK is installed under `${XDG_DATA_HOME:-$HOME/.local/share}/mobrealms/jdk-2
 
 The start script automatically finds this JDK for the same user and XDG_DATA_HOME. Startup never downloads Java itself; rerun the installer if Java was removed. Broken managed installations are not silently overwritten. Version/download provenance is recorded in `mobrealms-java.json` in the JDK directory. Existing Java 25 installations are reused without automatic updates.
 
-## Upgrade 0.1.0-dev to 0.2.0-dev
+## Upgrade 0.1.0-dev to 0.5.0-dev
 
 Stop the server with `stop` and wait for it to exit. In the repository:
 
 ```sh
-git switch feat/m1-foundation
+git switch feat/m2-m4-realms
 git pull --ff-only
 bash scripts/upgrade-server.sh --dir "$HOME/mob-realms-server"
 ```
 
 The script finds/provisions Java 25, builds the checked-out mod with tests, validates the managed installation and creates a **full sibling server backup**, including worlds/settings/mods. It replaces the mod and starter validation, preserving Minecraft, Fabric, extra mods, EULA and world data. Sufficient backup disk space is required; symlinks are rejected. It does not fetch an arbitrary latest release or automatically start the server.
 
-Alternatively supply `--mod fabric-mod/build/libs/mob-realms-0.2.0-dev.jar`. Run the installed `start-server.sh --check` and then `start-server.sh`. Replace the old client Mob Realms JAR with the new one too; Fabric API is unchanged.
+Alternatively supply `--mod fabric-mod/build/libs/mob-realms-0.5.0-dev.jar`. Run the installed `start-server.sh --check` and then `start-server.sh`. Replace the old client Mob Realms JAR with the new one too; Fabric API is unchanged.
 
 Ordinary replacement failures restore the previous files. A crash may leave `mobrealms-upgrade-incomplete.json`, which blocks the new starter; restore the complete backup named there rather than deleting the marker blindly. After save-format migration, downgrading requires the full world backup. Only installer-managed servers with unchanged Minecraft/Fabric versions are supported.

@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "entity_type": "minecraft:enderman",
+  "gather_weight": 1.8,
+  "regroup_weight": 1,
+  "carrying_capacity": 32,
+  "avoids_sun": false,
+  "dimensions": [
+    "minecraft:overworld",
+    "minecraft:the_end"
+  ]
+}

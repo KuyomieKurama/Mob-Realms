@@ -16,4 +16,4 @@ subprojects {
 tasks.named('build') { dependsOn ':sim-core:build', ':fabric-mod:build' }
 tasks.register('runClient') { dependsOn ':fabric-mod:runClient' }
 tasks.register('runServer') { dependsOn ':fabric-mod:runServer' }
-tasks.register('test') { dependsOn ':sim-core:coreTest' }
+tasks.register('test') { dependsOn ':sim-core:coreTest', ':sim-core:developmentTest' }

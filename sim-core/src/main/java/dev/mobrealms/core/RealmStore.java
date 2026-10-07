@@ -8,7 +8,7 @@ import java.util.zip.CRC32;
 
 /** Versioned bounded binary format. No Java object deserialization. */
 public final class RealmStore {
-    private static final int MAGIC = 0x4D524C4D, VERSION = 2, MAX_BYTES = 32 * 1024 * 1024;
+    private static final int MAGIC = 0x4D524C4D, VERSION = 3, MAX_BYTES = 32 * 1024 * 1024;
     private RealmStore() {}
     public static byte[] encode(RealmSimulation state) throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -33,6 +33,7 @@ public final class RealmStore {
                     .thenComparingInt(ChunkKey::x).thenComparingInt(ChunkKey::z)).toList();
             out.writeInt(protectedChunks.size());
             for (var c : protectedChunks) { out.writeUTF(c.dimension()); out.writeInt(c.x()); out.writeInt(c.z()); }
+            state.development().write(out);
         }
         byte[] payload = bytes.toByteArray();
         if (payload.length > MAX_BYTES - 8) throw new IOException("Realm save too large");
@@ -72,6 +73,7 @@ public final class RealmStore {
             }
             int protections = count(in, 100_000);
             for (int i = 0; i < protections; i++) state.protect(new ChunkKey(in.readUTF(), in.readInt(), in.readInt()));
+            if (version >= 3) state.development().read(in,state);
             if (in.available() != 0) throw new IOException("Trailing save data");
             return state; // all citizens start ABSTRACT; adapters must acquire fresh leases
         } catch (IllegalArgumentException | IllegalStateException | NullPointerException | ArithmeticException ex) {

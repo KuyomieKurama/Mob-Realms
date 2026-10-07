@@ -43,8 +43,10 @@ Prioritize chronicles, leaders and caravans early in M5. M1 camps use only a bas
 
 Each milestone includes complete source/resources, pinned build and Gradle wrapper, meaningful core tests, client/server verification status, gameplay checks, known limitations, German/English player guide updates and a changelog. Repository changes remain versioned here. Do not document planned behavior as shipped.
 
-## M1 implementation checkpoint
+## M2–M4 implementation checkpoint
 
-The development branch now contains `sim-core` and `fabric-mod`. Ten core scenarios and a full Java 25/Fabric compile have passed. M1 gameplay acceptance is still outstanding.
+`RealmSimulation` owns citizen identity, leases, resident indexes, cargo and inventories. `Development` owns towns, roles, construction reservations, claims, reputation, treaties, consent offers, technology, veterans and daily bandit state. `RealmStore` format 3 serializes both; formats 1/2 migrate on load.
 
-Current implementation deliberately bounds background work to delivery of existing cargo. Surveyed deposits, full abstract economic production, configurable offline catch-up and a graphical goal overlay remain future work. Camps are Overworld-only, own one chunk and use a starter roof/banner with an internal stockpile. Profiles are data-driven; faction templates and building styles are not implemented yet. Consult the player guides for exact behavior rather than treating the full architecture above as shipped functionality.
+`EconomyController` executes loaded extraction/building/trader/combat actions and one queued town report per update. `Blueprints` validates seven datapack templates and snapshots each accepted project. `SettlerEntity` is a custom humanoid NPC. `NationCommands` validates mutations server-side; `RealmDashboard` sends bounded JSON snapshots. Client-only `RealmScreen` renders the atlas; `SettlerRenderer` renders skin/equipment layers.
+
+The original roadmap above remains the target, not a claim that all goals are shipped. Current towns are single-settlement polities, emissaries are commands rather than physical actors, technology is a fixed five-step sequence, and only known farms/planned construction operate abstractly. There is no autonomous unloaded terrain discovery, broad species-specific doctrine, multi-city government or full offline catch-up. Performance budgets are scheduling targets, not hard guarantees around individual Minecraft calls.

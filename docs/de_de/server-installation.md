@@ -1,6 +1,6 @@
 # Server automatisch installieren (Linux)
 
-Das Skript installiert Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und Mob Realms 0.2.0-dev. Es verwendet den offiziellen Fabric Installer 1.1.2. Es ist für Arch Linux und andere Linux-Systeme gedacht, ohne zusätzliche Python-Pakete.
+Das Skript installiert Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und Mob Realms 0.5.0-dev. Es verwendet den offiziellen Fabric Installer 1.1.2. Es ist für Arch Linux und andere Linux-Systeme gedacht, ohne zusätzliche Python-Pakete.
 
 ## Voraussetzungen
 
@@ -20,7 +20,7 @@ Du kannst weiterhin ein eigenes Java 25 über `JAVA_HOME`, `JAVA_BIN` oder PATH 
 
 ## Installation aus dem Repository
 
-Im Repository auf dem Branch `feat/m1-foundation`:
+Im Repository auf dem Branch `feat/m2-m4-realms`:
 
 ```sh
 ./scripts/install-server.sh --dir "$HOME/mob-realms-server"
@@ -32,7 +32,7 @@ Mit bereits gebauter oder aus dem CI-Artefakt entpackter Mod-JAR:
 
 ```sh
 ./scripts/install-server.sh --dir "$HOME/mob-realms-server" \
-  --mod /pfad/mob-realms-0.2.0-dev.jar --xms 1G --xmx 4G
+  --mod /pfad/mob-realms-0.5.0-dev.jar --xms 1G --xmx 4G
 ```
 
 Die Datei muss die normale Mod-JAR sein, nicht `-sources.jar`. Relative Pfade und Pfade mit Leerzeichen werden unterstützt.
@@ -91,13 +91,13 @@ Eine wiederholte Installation in einen gültigen, verwalteten Ordner prüft ihn 
 
 Bei beschädigten oder ausgetauschten verwalteten JARs bricht die Prüfung ab. Stelle die Originaldateien wieder her oder installiere in ein neues Verzeichnis, statt Prüfsummen blind anzupassen.
 
-## Upgrade von 0.1.0-dev auf 0.2.0-dev
+## Upgrade von 0.1.0-dev auf 0.5.0-dev
 
 1. Den Server in seiner Konsole mit `stop` beenden und auf das vollständige Beenden warten.
 2. Im Repository den Entwicklungsbranch aktualisieren und das Upgrade ausführen:
 
 ```sh
-git switch feat/m1-foundation
+git switch feat/m2-m4-realms
 git pull --ff-only
 bash scripts/upgrade-server.sh --dir "$HOME/mob-realms-server"
 ```
@@ -108,7 +108,7 @@ Mit bereits gebauter JAR:
 
 ```sh
 bash scripts/upgrade-server.sh --dir "$HOME/mob-realms-server" \
-  --mod fabric-mod/build/libs/mob-realms-0.2.0-dev.jar
+  --mod fabric-mod/build/libs/mob-realms-0.5.0-dev.jar
 "$HOME/mob-realms-server/start-server.sh" --check
 "$HOME/mob-realms-server/start-server.sh"
 ```

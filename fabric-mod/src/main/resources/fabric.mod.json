@@ -8,6 +8,9 @@
   "entrypoints": {
     "main": [
       "dev.mobrealms.fabric.MobRealms"
+    ],
+    "client": [
+      "dev.mobrealms.client.RealmClient"
     ]
   },
   "depends": {

@@ -1,126 +1,81 @@
-# Mob Realms – Spielanleitung
+# Mob Realms spielen — 0.5.0-dev
 
-[Projektübersicht](../../README.md) · [English](../en_us/player-guide.md)
+## Installation und Einstieg
 
-## Entwicklungsstand
+Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.5.0-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
 
-M1 ist ein Entwicklungskandidat, keine stabile Veröffentlichung. Die folgenden Funktionen sind implementiert, müssen aber noch im Client und auf einem Dedicated Server abgenommen werden. Nutze eine neue Testwelt. Diplomatie, Wachstum, Lernen und menschliche NPCs folgen später.
+Beginne in einer Testwelt auf Normal. `/realm` öffnet den Reichsatlas. Er zeigt einen Server-Schnappschuss; **Aktualisieren** lädt aktuelle Werte. Gold markiert die gewählte Siedlung, Türkis aktive Entwicklung. Übersicht und Forschung lassen sich mit dem Mausrad scrollen. Die Karte zeigt beanspruchte Chunks der aktuellen Siedlungsseite und Dimension, keine Landschaft.
 
-## Installation und Start
+## Wie eine Zivilisation wächst
 
-Du benötigst Minecraft Java 26.3, Java 25, Fabric Loader 0.19.5 und Fabric API 0.161.0+26.3. Installiere die normale Mod-JAR und Fabric API sowohl auf dem Client als auch auf dem Server; nur so sind auch Übersetzungen vorhanden. Die `-sources.jar` ist nicht zum Spielen gedacht.
+Nach der konfigurierten Schonfrist suchen natürliche Gründungen in geladenen Gebieten bei Spielern nach freien Bauplätzen. Ein Lager startet mit drei Bewohnern, Dach, Banner und einmaligen Nahrungsvorräten. Wilde Mobs bleiben Vanilla-Mobs. Auf engen, geschützten, unebenen oder bereits belegten Flächen entsteht kein Lager.
 
-Zum Entwickeln auf Arch Linux/VS Code: Java 25 als Projekt-JDK und als Gradle-JVM auswählen, Repository klonen und den Entwicklungsbranch auschecken. Siehe [Build-Anleitung](../development.md).
+Zuerst wird ein Feld geplant, dann Wohnraum, Lager und Werkstatt, später Markt und Verteidigung. Im Atlas siehst du das nächste Bauziel und den aktuellen Engpass. Baumeister setzen Blöcke einzeln. Sammler und Bergleute beschaffen dafür echte Ressourcen aus ungeschützten, eigenen Rohstoff-Chunks und angrenzendem geladenem Land. Bauflächen werden nicht abgebaut. Neue Gebäude brauchen eine freie, ebene Fläche von bis zu 9 × 9 Blöcken. Es werden keine Chunks zwangsgeladen.
 
-```sh
-./gradlew test
-./gradlew build
-./gradlew runClient
-```
+Holz wird zu Baumaterial verarbeitet, Weizen zu Brot; Werkstätten verarbeiten Roheisen mit Kohle. Baustoffkosten sind vereinfachte Baupakete, keine exakte Abbildung aller Vanilla-Rezepte. Beispielsweise bezahlt Holz auch Holzmöbel. Dekorative Farmblöcke gehören zur Feldvorlage.
 
-## Dein erstes Lager
+Bauern erzeugen täglich begrenzte Nahrung aus funktionsfähigen Feldern. Dies ist eine Wirtschaftsberechnung; einzelne Weizenpflanzen werden nicht vollständig nach Vanilla-Regeln geerntet. Ohne Nahrung stoppt das Wachstum. Häuser schaffen je vier zusätzliche Wohnplätze. Nach ausreichend versorgten Tagen entstehen Bewohner; in entladenen Gebieten werden sie erst beim Laden sichtbar. Beschädigte Gebäude verlieren nach Prüfung ihren Nutzen. Automatische Reparatur ist noch nicht implementiert.
 
-1. Erstelle eine Testwelt in der Oberwelt, mit Cheats und Schwierigkeit Normal. Friedlich entfernt feindliche Vanilla-Entity-Typen und eignet sich nicht für diese Version.
-2. Suche eine ebene, feste Fläche. Um deine Position müssen 3×3 Blöcke Boden und darüber vier Blöcke freie Luft sein. Das gesamte Lager muss innerhalb eines Chunks liegen; mit F3+G siehst du die Grenzen.
-3. Führe `/civ found mobrealms:zombie` aus. Ein kleines Startdach, ein grünes Banner und drei Bewohner werden angelegt.
-4. Gehe mindestens 48 Blöcke weiter und führe `/civ found mobrealms:skeleton` aus. Dieses Lager erhält ein blaues Banner.
-5. Wirf nachts Knochen oder Bruchstein in die Nähe eines Lagers, innerhalb seines Chunks und höchstens zwölf Blöcke vom Zentrum entfernt. Die Bewohner laufen zu geeigneten Gegenständen und bringen sie zurück.
-6. Prüfe mit `/civ info` den internen Lagerbestand und mit `/civ goals` die Ziele der Bewohner.
+Geladene Händler reisen für Handel zwischen nahen Siedlungen. Ohne Handelspakt, Bündnis oder Vasallität gibt es keinen automatischen Tausch. Vorräte werden auf beiden Seiten tatsächlich abgezogen. Entladene Siedlungen können bestehende Felder nutzen und bereits geplante Bauprojekte bezahlen; sie erkunden und erfinden keine neuen Rohstoffvorkommen.
 
-Das Startdach und Banner sind eine einmalige Grundausstattung. Sie werden noch nicht aus gesammelten Materialien gebaut. Die Lagerbestände sind intern gespeichert; es gibt noch keine plünderbare Truhe und keinen Auszahlungsbefehl.
+## Spezies
 
-Gesammelt werden unveränderte Vanilla-Gegenstände: verrottetes Fleisch, Knochen, Pfeile, Stöcke, Bruchstein, Eichenstämme, Kohle und Eisenbarren. Gegenstände mit abweichenden Komponenten werden nicht eingesammelt. Pro Gang tragen Bewohner höchstens 16 Stück. Sie können auch von Spielern weggeworfene Materialien dieser Liste nehmen.
-
-Zombies gewichten Sammeln stärker, Skelette die Rückkehr zur Gruppe. Bei Sonne oder sehr niedriger Gesundheit suchen Bewohner ihr Lager auf. Wird das Dach zerstört, gibt es noch keine automatische Reparatur. Ohne Sammelziel patrouillieren gesunde Bewohner nachts auf begehbarem Boden im eigenen Chunk. Tagsüber bleiben sonnenempfindliche Bewohner im Schutz; auf zu kleinen Inseln fehlen unter Umständen sichere Patrouillenziele. Wilde Mobs erhalten keine neue KI. Lagerbewohner greifen in M1 keine Spieler an; Kämpfe und Diplomatie sind noch nicht implementiert.
-
-## Automatische Gründungen
-
-Nach drei Welt-Tagen oder drei simulierten Tagen beginnt die natürliche Besiedlung. Alle 30 Sekunden werden bis zu acht Standortversuche auf mehrere Ticks verteilt. Ein abgeschlossener simulierter Tag stößt ebenfalls eine begrenzte Suche an. Gleichzeitige Anfragen werden zusammengefasst; 365 Tage garantieren nicht 365 Gründungen.
-
-Gesucht wird 32 bis ungefähr 136 Blöcke um aktive Spieler in der Oberwelt, nur in bereits geladenen Chunks. Es müssen natürliche Bodenarten (Grasblock, Erde, Sand, Podsol, Myzel oder Schneeblock), eine freie ebene 3×3-Fläche und Abstand zu vorhandenen Lagern vorhanden sein. Spieler in anderen Dimensionen werden übersprungen; Zuschauer in der Oberwelt können die Entstehung beobachten. Die Schonfrist, Suchhäufigkeit und Versuche sind konfigurierbar; Lager- und Bevölkerungsgrenzen gelten weiterhin.
-
-Das sind erste Zivilisationslager mit drei neuen Bewohnern; wilde Mobs werden nicht umgewandelt. Noch entstehen keine Städte. Auf schwierigem Gelände kann die Suche scheitern. Mit `/civ protect` schützt du eigene Grundstücke ausdrücklich; auch ein Spieler kann natürliche Bodenblöcke gesetzt haben.
-
-## Befehle
-
-Alle Befehle benötigen die Minecraft-Berechtigung `COMMANDS_GAMEMASTER` (normalerweise Operator-Stufe 2 oder aktivierte Cheats).
-
-| Befehl | Wirkung |
+| Spezies | Verfügbarkeit und Unterschiede |
 |---|---|
-| `/civ info` | Lager, Bewohnerzahl, simulierte Tage und Bestände |
-| `/civ goals` | Aktuelle Ziele der Bewohner; noch kein grafisches Overlay |
-| `/civ relations` | Beziehungen zwischen Lagern, in M1 immer neutral (0) |
-| `/civ found mobrealms:zombie` | Zombielager am eigenen Standort gründen |
-| `/civ found mobrealms:skeleton` | Skelettlager am eigenen Standort gründen |
-| `/civ protect` | Aktuellen Chunk gegen Gründung und Materialsammeln durch diese Mod schützen |
-| `/civ unprotect` | Diesen Schutz entfernen |
-| `/civ admin` | Admin-GUI mit Lagerübersicht, Tageszahl, Abbruch und Chunk-Schutz |
-| `/civ simulate <tage>` | 1–365 abstrakte Tage vormerken |
-| `/civ simulate cancel` | Noch ausstehende Tage abbrechen |
+| Zombies | Oberwelt, suchen tagsüber Schutz |
+| Skelette | Oberwelt/Nether, Sonnenschutz, ausrüstbare Bogenschützen |
+| Creeper | Oberwelt, kontrollierte Mauerdurchbrüche nach Belagerungsforschung |
+| Spinnen | Oberwelt, eigenes Bewegungsmodell |
+| Endermen | Oberwelt/End, größere Tragekapazität, friedliche autonome Diplomatie |
+| Piglins | Nether, passende Baupalette; zivilisierte Piglins zombifizieren nicht |
+| Illager | Oberwelt, eigene dunkle Baupalette |
+| Siedler | Oberwelt, eigene menschliche NPC-Entität mit neun Skins |
 
-Schutz wirkt nur auf Mob-Realms-Aktionen. Er verhindert weder Vanilla-Explosionen noch Spieleraktionen. Es gibt keine automatische Erkennung von Spielergebäuden. Beim Sammeln respektieren Bewohner ihre eigene Chunk-Grenze und geschützte Chunks.
+Alle nutzen denselben Wirtschaftskern. Infektion, Spinnennetze, ein eigenes Gold-Währungssystem und vollständig einzigartige Militärdoktrinen sind noch nicht enthalten. Angeworbene Bewohner behalten ihre ursprüngliche Spezies.
 
-## Admin-GUI
+## Deine Nation
 
-Öffne `/civ admin`. Das native Minecraft-Dialogfenster zeigt Lager und Koordinaten in Seiten mit je fünf Einträgen, die Gesamtbevölkerung, Vorräte und ausstehende Tage. Gib 1–365 Tage ein und wähle **Simulation starten**. **Aktualisieren** lädt den aktuellen Stand; die Anzeige ist kein Live-Stream. **Ausstehende Tage abbrechen** beendet die Warteschlange; **Aktuellen Chunk schützen** schützt deinen Standort.
+1. Stelle ein **Gründungsbanner** aus einem weißen Banner und einem Smaragd her (formlos).
+2. Benutze es auf freiem, ebenem Boden mit fünf Blöcken freiem Raum über der Grundfläche. Halte mindestens 48 Blöcke Abstand zu anderen Lagern. Du kannst eine Nation besitzen.
+3. Öffne `/realm` und wähle deine Siedlung. Spende Baumaterial oder Brot mit dem Gegenstand in der Haupthand.
+4. Beanspruche einen angrenzenden, freien Chunk über **Diesen Chunk beanspruchen**. Geschützte und fremde Chunks sind ausgeschlossen; maximal 64 Chunks je Siedlung.
+5. Weise Bewohnern im Bewohner-Tab Rollen zu. Der Knopf wechselt nacheinander durch Sammler, Bergmann, Baumeister, Bauer, Wache, Soldat, Händler und Anführer.
 
-Jede Schaltfläche führt einen normalen, erneut berechtigungsgeprüften Serverbefehl als anklickender Spieler aus. Minecraft kann für privilegierte Befehle eine Bestätigung anzeigen. Ohne Operatorrechte/aktivierte Cheats sind die Verwaltungsaktionen nicht verfügbar. Das Fenster pausiert die Simulation nicht. Es verwendet Vanilla-Rendering und benötigt keine zusätzliche GUI-Bibliothek. Mob Realms auf dem Client liefert die Übersetzungen.
+Anwerben kostet acht Smaragde. Der Bewohner muss innerhalb von 16 Blöcken stehen, aus einer NPC-Siedlung kommen und bei dir Wohnraum finden. Du brauchst dort mindestens 20 Ruf oder die Siedlung muss seit mindestens zwei Tagen hungern. Bewohner anderer Spieler können nicht abgeworben werden.
 
-## Hintergrundsimulation
+## Diplomatie
 
-Entladene Bewohner bleiben über stabile IDs mit ihren gespeicherten Minecraft-Entities verbunden. Bereits getragene Fracht wird beim nächsten abstrakten Tag eingelagert. Ohne solche Fracht entsteht kein neuer Bestand. Es gibt noch keine abstrakte Rohstoffgewinnung, Bevölkerungserhöhung oder Kriegsführung.
+Ein Geschenk kostet vier Smaragde und verbessert Ruf und gegebenenfalls die Beziehung deiner Nation um zwölf. Vier Brot kosten einen Smaragd, sofern Vorrat und Ruf ausreichen und kein Krieg besteht. Der Tauschknopf tauscht vier eigene Holzplanken gegen vier fremde Bruchsteine bei gültigem Vertrag.
 
-Geladene Bewohner werden durch `/civ simulate` nicht teleportiert oder beschleunigt. Der Befehl ändert auch keine Minecraft-Uhr. Eine Warteschlange umfasst maximal 365 Tage und wird einschließlich des Fortschritts innerhalb eines Tages gespeichert. Pro Tagesaufgabe werden höchstens 32 Bewohner geprüft. Ein Abbruch nimmt bereits erfolgte Lieferungen nicht zurück. Rückwärts gesetzte Weltzeit löst keine erneute Tagesbelohnung aus; große Vorwärtssprünge sind auf sieben Tage begrenzt.
+NPC-Verträge benötigen Beziehung 10 für Handel, 20 für Nichtangriff, 50 für Bündnis und 80 für Vasallität. Frieden benötigt mindestens −20; aus einem Krieg muss zunächst Frieden werden. Andere Spieler müssen Angebote annehmen; Angebote verfallen nach drei Simulationstagen. Krieg tritt sofort ein und beendet alte Vertragsangebote. Der Initiator einer akzeptierten Vasallität ist der Oberherr; Tribut und politische Kontrolle sind noch nicht umgesetzt.
 
-Fortschritt bei ausgeschaltetem Server ist noch nicht implementiert. Auf einem pausierten Dedicated Server tickt die Mod ebenfalls nicht.
+Wachen und Soldaten bekämpfen nahe Bewohner und Spieler verfeindeter Nationen. Kreativ- und Zuschauerspieler sind ausgenommen. Krieg und Vasallitätsforderung haben einen zusätzlichen Bestätigungsknopf. Persönliche Geschenke sind auch ohne Nation möglich. Physische Gesandte fehlen noch.
 
-## Konfiguration
+## Lernen und Forschung
 
-`config/mobrealms.properties` entsteht beim ersten Serverstart. Änderungen benötigen einen Neustart.
+Jeden Simulationstag bewertet eine Siedlung Versorgung, Arbeit und Verluste. Ein begrenzter Bandit-Algorithmus vergleicht Wohlstand, Wachstum und Sicherheit. Die Gewichte und gelernte Fernkampfgefahr stehen im Forschungstab. Es gibt keine externen ML-Dienste.
 
-| Schlüssel | Standard | Bedeutung |
-|---|---:|---|
-| `maxCamps` | 8 | Maximale Lagerzahl |
-| `maxPopulation` | 1000 | Maximale Bewohnerzahl |
-| `maxDetailed` | 100 | Gleichzeitige detaillierte Bewohner |
-| `aiInterval` | 20 | Ticks zwischen gestaffelten Entscheidungen |
-| `workPerTick` | 8 | Maximale Aufgaben pro Tick |
-| `budgetMicros` | 2000 | Zeitbudget für die Aufgabenwarteschlange |
-| `graceDays` | 3 | Welt- oder simulierte Tage vor natürlichen Gründungsversuchen |
-| `naturalCamps` | true | Natürliche Gründungsversuche erlauben |
-| `naturalIntervalSeconds` | 30 | Abstand der Suchrunden (5–3600 Sekunden) |
-| `naturalAttempts` | 8 | Standortversuche je Runde (1–64), über Ticks verteilt |
+Werkstätten erzeugen Forschungspunkte. Die fünf aufeinanderfolgenden Technologien kosten zunehmend Forschung und Bruchstein: Landwirtschaft verbessert Ernten, Mauerwerk ermöglicht Mauern, Schilde ermöglichen ressourcenabhängige Schutzschilde, Flankieren beeinflusst Kampfwege, Belagerung ermöglicht Creeper-Durchbrüche. Veteranen sammeln Erfahrung bei Arbeit und Kämpfen. Die Fernkampfanpassung erfasst aktuell tödliche Pfeilangriffe, nicht jeden abgegebenen Schuss.
 
-Die drei Bevölkerungs-/Lagergrenzen werden in einer neuen Welt festgeschrieben und mitgespeichert; Änderungen gelten zunächst nur für neue Simulationsstände. Ohne Wachstum entstehen in M1 höchstens drei Bewohner pro Lager. Überzählige geladene Bewohner pausieren ihre detaillierte KI. Das Zeitbudget begrenzt den Scheduler, nicht sämtliche Vanilla-Entity-Kosten, Dateispeicherung oder einmalige Lagergründungen.
+## Administration und Zeitraffer
 
-## Speichern und Wiederherstellen
+- `/civ admin`: Atlas mit Admin-Steuerung.
+- `/civ found <spezies>`: gezieltes Testlager; Tab-Vervollständigung nutzen.
+- `/civ info`, `/civ relations`, `/civ goals`: Zustände prüfen.
+- `/civ simulate 30`: 30 Wirtschaftstage in begrenzten Arbeitsschritten einreihen; maximal 365 wartende Tage. Dies beschleunigt keine laufenden Vanilla-Bewegungen.
+- `/civ simulate cancel`: wartende Tage abbrechen.
+- `/civ speed 5`: gesamten Server auf bis zu fünffaches Ticktempo setzen; `/civ speed 1` setzt zurück. Erreichbares Tempo hängt von der Hardware ab.
+- `/civ observe`: Zuschauerflug; Mob anklicken, um seine Kamera zu übernehmen. Schleichen verlässt die Mob-Kamera. `/civ observe creative` oder `survival` beendet den Zuschauermodus. Das ist die Vanilla-Zuschauerkamera, keine neue filmische Third-Person-Kamera.
+- `/civ protect` und `/civ unprotect`: aktuellen Chunk schützen bzw. freigeben.
 
-Bestehende Speicherstände im Format 1 werden gelesen und beim nächsten Speichern ins Format 2 migriert. Alte Mod-Versionen können Format 2 nicht lesen; vor einem Downgrade ein vollständiges Weltbackup wiederherstellen.
+Neue von Spielern platzierte Blockgegenstände schützen standardmäßig ihren gesamten Chunk. Ältere Spielerbauten werden nicht automatisch erkannt: ihre Chunks vor dem Spielen manuell schützen. Der Schutz ist konservativ und kann auch nach einem fehlgeschlagenen Platzierungsversuch greifen. Es gibt keine Kompatibilitätsanbindung an fremde Claim-Mods.
 
-Weltzustand: `<welt>/mobrealms/realms.dat`. Die vorherige gültige Version liegt in `realms.dat.bak`. Beschädigte Dateien werden nicht stillschweigend überschrieben. Ein Ladefehler stoppt den Start; ein Speicherfehler hält die Simulation an und wird protokolliert.
+Die Konfiguration unter `config/mobrealms.properties` enthält Wachstumsdauer, Aggressivität, Lerntempo/-grenze, Bevölkerung, Tagesbudget, natürliche Gründungen und Bauschutz. Server nach Änderungen neu starten. `learningRate=0` stoppt Strategieanpassung, nicht Wirtschaft und Forschung.
 
-Sichere vor Wiederherstellung den gesamten Weltordner. Bewohner-Entities und Mod-Zustand müssen zusammenpassen: Stelle möglichst ein vollständiges Weltbackup wieder her. Die Mod-Datei und Minecraft-Chunk-Dateien sind keine gemeinsame atomare Transaktion; bei Prozessabbruch während des Speicherns ist keine vollständige Crash-Konsistenz garantiert.
+## Abnahmetest und Grenzen
 
-## Abnahmetests im Spiel
+Teste zuerst in einer Kopie deiner Welt: Lager bei Wald und ebener Freifläche gründen, Vorräte spenden, Bau bis Feld und Haus beobachten, 30 Tage simulieren, Rollen und Handel prüfen, speichern/neustarten und Baufortschritt vergleichen. Prüfe mit zwei Spielern, dass Verträge Zustimmung benötigen und fremde Rollen nicht geändert werden können. Teste UI bei verschiedenen GUI-Skalierungen und Zeitraffer anschließend wieder auf 1× zurücksetzen.
 
-- `/civ admin` öffnen, 30 Tage simulieren, Anzeige aktualisieren, Abbruch und Seitenwechsel testen. Danach ohne OP erneut versuchen.
-- `naturalCamps=true`, `graceDays=0` in einer neuen Testwelt einstellen, neu starten und in offenem Gelände natürliche Lager beobachten. Einen geschützten Bereich mitprüfen.
-- Beide Lager gründen; passende Gegenstände ablegen und tatsächliche Ablieferung beobachten.
-- Wilde Zombies/Skelette daneben spawnen: Sie behalten Vanilla-Verhalten.
-- Einen freien Chunk schützen: Dort muss die Lagergründung scheitern.
-- Eine Frachtaufnahme beobachten, das Gebiet entladen und einen abstrakten Tag simulieren. Nach Rückkehr dürfen weder Bewohner noch Fracht verdoppelt sein.
-- Welt speichern, schließen und neu laden: IDs, Bestände und Schutzgebiete vergleichen.
-- Dieselben Schritte auf einem Dedicated Server durchführen, auch ohne Operatorrechte testen.
-- Tagsüber Schutzsuche prüfen und sich außerhalb des Gebietes aufhalten: Die Mod darf keine Chunks zwangsweise laden.
+0.5.0-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
 
-Diese Spieltests sind noch nicht als bestanden bestätigt. Automatisierte Kerntests ersetzen sie nicht.
-
-[Automatische Serverinstallation](server-installation.md)
-
-## Sichtbarer Zeitraffer und Beobachterkamera
-
-`/civ speed 2` oder `/civ speed 5` fordert 40 beziehungsweise 100 Server-Ticks pro Sekunde an. Das beschleunigt echte Bewegungen, KI und Weltzeit für **alle Spieler**. `/civ speed 1` stellt 20 TPS wieder her. Die Vanilla-Berechtigung für `/tick rate` gilt zusätzlich; es werden keine Rechte erhöht. Tatsächlich erreichbares Tempo hängt von der Serverleistung ab. Ein Neustart bzw. Vanilla bestimmt die Lebensdauer dieser Tickrate, die Mod speichert sie nicht.
-
-Mit `/civ observe` wechselst du ausdrücklich in den Zuschauermodus: fliege außerhalb des Lagers für eine freie Beobachteransicht oder klicke einen Mob zum Mitfahren an. Schleichen verlässt die Mob-Kamera. `/civ observe creative` bzw. `/civ observe survival` wechselt zurück in den gewünschten Modus. Der vorherige Modus wird nicht automatisch gespeichert. Für die klassische Third-Person-Sicht bleibe in Kreativ und nutze F5. Das ist keine automatische Orbit-Kamera.
-
-`/civ simulate 30` verarbeitet dagegen nur abstrakte Tageslogik und ersetzt den sichtbaren Zeitraffer nicht. Wachstum, Bergbau und Gebäudeproduktion fehlen weiterhin; Patrouillen erzeugen keine Ressourcen. Teste bei Nacht mit auf den Boden geworfenen Knochen die tatsächliche Sammelbewegung.
+Speicherformat 3 liest alte Formate 1/2. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.

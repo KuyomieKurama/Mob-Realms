@@ -56,7 +56,7 @@ def upgrade(directory, mod):
         versions = previous.get('versions', {})
         sm.require(all(versions.get(k) == v for k, v in sm.VERSIONS.items() if k != 'mobrealms'),
                    'Minecraft/Fabric upgrades require a separate installation; only the mod is upgraded here.')
-        sm.require(versions.get('mobrealms') in ('0.1.0-dev', sm.VERSIONS['mobrealms']), 'Unsupported source mod version.')
+        sm.require(versions.get('mobrealms') in ('0.1.0-dev', '0.2.0-dev', sm.VERSIONS['mobrealms']), 'Unsupported source mod version.')
         sm.verify_install(directory, versions)
         if sm.digest(mod) == sm.digest(directory / 'mods/mob-realms.jar'):
             print('Identical mod already installed; no changes.'); return None

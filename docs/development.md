@@ -22,14 +22,14 @@ Select an installed JDK 25 as both your Java project runtime and Gradle JVM. Che
 ```sh
 git clone https://github.com/KuyomieKurama/Mob-Realms.git
 cd Mob-Realms
-git switch feat/m1-foundation
+git switch feat/m2-m4-realms
 ./gradlew test
 python3 scripts/check_resources.py
 ./gradlew build
 ./gradlew runClient
 ```
 
-Mod artifact: `fabric-mod/build/libs/mob-realms-0.2.0-dev.jar`. The core is included in this JAR. Do not install `sim-core` or the sources JAR separately.
+Mod artifact: `fabric-mod/build/libs/mob-realms-0.5.0-dev.jar`. The core is included in this JAR. Do not install `sim-core` or the sources JAR separately.
 
 For a development dedicated server:
 
@@ -49,9 +49,9 @@ Use a fresh test world, Normal difficulty and operator permissions. See the play
 
 `sim-core:coreTest` is a dependency-free executable harness. It fails the build on any failed expectation without requiring Java's `-ea`. The standard JUnit-discovery task is disabled because the executable harness is the test runner; both `test` and `check` depend on that harness.
 
-Ten scenarios cover randomized resource conservation, overflow rollback, stale ownership leases, claim/population limits, save/load identity and cargo, corruption/backup behavior, abstract delivery without resource creation, world-clock jumps, bounded scheduling and species utility decisions.
+Twelve foundation scenarios cover randomized resource conservation, overflow rollback, stale ownership leases, claim/population limits, save/load identity and cargo, corruption/backup behavior, abstract delivery without resource creation, world-clock jumps, bounded scheduling and species utility decisions.
 
-Core sources also compile with a Java 17 language subset, which enabled additional local checks in the development environment. The shipping Gradle build targets Java 25. GitHub Actions runs the Java 25 build and core tests, checks JSON/translation parity and attempts a dedicated-server settings-only bootstrap. Successful development JARs are available as workflow artifacts, not stable releases.
+Six additional `DevelopmentTests` scenarios cover growth gates, prepaid abstract construction, atomic barter, treaty consent/claims, learning/technology and persistent recruitment/species. Both executable harnesses run through Gradle test/check. The shipping Gradle build targets Java 25. GitHub Actions runs the Java 25 build and core tests, checks JSON/translation parity and attempts a dedicated-server settings-only bootstrap. Successful development JARs are available as workflow artifacts, not stable releases.
 
 ## Known validation limits
 
@@ -76,6 +76,10 @@ Datapack path: `data/<namespace>/mobrealms/species/<name>.json`. Supply the appr
 
 Its identifier is `<namespace>:<name>`. Add `species.<namespace>.<name>` to your resource-pack language files. Values must be finite/non-negative; carrying capacity is 1–64. The entity type must create a Mob. Existing profiles cannot be removed while camps reference them. Invalid reloads retain the previous profile set and log the problem; valid definitions activate after `/reload`.
 
-M1 still uses a fixed material whitelist and the same starter shelter for all profiles. Completely new behaviors, construction styles and faction templates are later work, not JSON-programmable features of this candidate.
+Eight bundled profiles use an optional `dimensions` list. Building templates live in `data/<namespace>/mobrealms/buildings/`; the seven required building kinds each contain bounded relative block/material tiles. Active projects snapshot their tiles. Template changes currently require a server restart. New behavior primitives and independent faction templates still require code.
 
 For a user-local installer JDK on Linux x64, use `export JAVA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/mobrealms/jdk-25-x64"` and `export PATH="$JAVA_HOME/bin:$PATH"` before invoking Gradle directly (ARM64: `jdk-25-aarch64`). Installer/upgrade scripts select this JDK themselves.
+
+## 0.5.0-dev validation
+
+Local checks: Java 25 compilation of common and client sources against the official Minecraft 26.3 JAR and exact Fabric API modules; 18 core scenarios; 21 installer/upgrade tests; JSON and bilingual translation parity. Local Gradle is blocked by sandbox Unix-socket restrictions, so the repository CI is the full Loom build gate. Do not treat manual javac as a substitute for a successful CI build. No interactive Minecraft rendering or gameplay was run here.

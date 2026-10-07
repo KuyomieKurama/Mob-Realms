@@ -1,1 +1,12 @@
-{"schema":1,"entity_type":"minecraft:skeleton","gather_weight":0.8,"regroup_weight":2.0,"carrying_capacity":16,"avoids_sun":true}
+{
+  "schema": 1,
+  "entity_type": "minecraft:skeleton",
+  "gather_weight": 0.8,
+  "regroup_weight": 2.0,
+  "carrying_capacity": 16,
+  "avoids_sun": true,
+  "dimensions": [
+    "minecraft:overworld",
+    "minecraft:the_nether"
+  ]
+}

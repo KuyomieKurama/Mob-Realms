@@ -1,126 +1,45 @@
-# Mob Realms – Player guide
+# Playing Mob Realms — 0.5.0-dev
 
-[Project overview](../../README.md) · [Deutsch](../de_de/spielanleitung.md)
+Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.5.0-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
 
-## Status
+## Settlements
 
-M1 is a development candidate, not a stable release. The mechanics below are implemented but still need client and dedicated-server gameplay acceptance. Use a new test world. Diplomacy, growth, learning and human NPCs are future features.
+Start in a Normal-difficulty test world. `/realm` opens the navy/gold/teal realm atlas. Refresh retrieves a server snapshot; overview and research scroll with the mouse wheel. The map shows claimed chunks on the selected page and dimension, without terrain.
 
-## Requirements and build
+Natural founding searches loaded, clear, unprotected land near players after the configured grace period. Three residents receive a starter shelter, banner and initial food. Wild mobs retain vanilla behavior. Construction priorities are farms, housing, storage, workshops, markets and defenses. Buildings require flat, empty sites up to 9 × 9 blocks. The atlas reports the current objective and obstacle.
 
-Minecraft Java 26.3, Java 25, Fabric Loader 0.19.5 and Fabric API 0.161.0+26.3. Install the normal mod JAR and Fabric API on both client and server for translated messages. Do not install the sources JAR.
+Builders place blocks and consume inventory. Gatherers and miners extract finite resources from unprotected commons and adjacent loaded land; building sites are excluded. Wood becomes construction material, wheat becomes bread, and workshops smelt raw iron with coal. Construction costs are simplified material packages, not exact vanilla recipes. No chunks are force-loaded.
 
-For VS Code on Arch Linux, select Java 25 for both the project and Gradle. See [development instructions](../development.md).
+Staffed farms produce bounded food daily; individual crops are not simulated as full vanilla harvesting. Housing and sustained food permit births. Each house supplies four additional places. Unloaded newborns appear when loaded. Damaged buildings lose their benefit when inspected; repairs are not automatic. Unloaded settlements can farm, trade existing stock and fund already planned projects, but do not discover resources or new building sites.
 
-```sh
-./gradlew test
-./gradlew build
-./gradlew runClient
-```
+Eight profiles are available: zombies, skeletons, creepers, spiders, endermen, piglins, illagers and custom human settlers with nine skins. Zombies/skeletons avoid sunlight; endermen carry more and use peaceful autonomous diplomacy; piglins found in the Nether and do not zombify when civilized. Skeletons can equip bows, creepers unlock controlled siege breaches. Unique infection, web traps and a separate gold currency are future work. Most economic behavior is shared.
 
-## First camps
+## Your nation
 
-1. Create a new Overworld test world with cheats and Normal difficulty. Peaceful removes hostile vanilla entity types and is unsuitable for this version.
-2. Find solid, flat 3×3 ground with four blocks of air above it, entirely inside one chunk. F3+G shows chunk borders.
-3. Run `/civ found mobrealms:zombie` to create a starter roof, green banner and three citizens.
-4. Move at least 48 blocks away and run `/civ found mobrealms:skeleton` for a blue-banner camp.
-5. At night, drop bones or cobblestone inside the camp's chunk, within twelve blocks of its center. Citizens collect suitable drops and return them to camp.
-6. Use `/civ info` for stored goods and `/civ goals` for current intentions.
+Craft a founding banner from a white banner and an emerald (shapeless), then use it on open, flat ground with five blocks of clearance, at least 48 blocks from other camps. One nation per player. Use `/realm` to donate held items, claim a neighboring free chunk (maximum 64), and cycle resident roles: gatherer, miner, builder, farmer, guard, soldier, trader, leader.
 
-The roof/banner are a one-time starter endowment, not resource-funded construction. Supplies are an internal inventory; there is no lootable chest or withdrawal command yet.
+Recruitment costs eight emeralds, requires a resident within 16 blocks, free housing, and either reputation 20 or a source settlement starving for two days. Player-owned residents cannot be recruited away. Recruits retain their species.
 
-Accepted unmodified vanilla items: rotten flesh, bones, arrows, sticks, cobblestone, oak logs, coal and iron ingots. Modified item components are excluded. Carrying capacity is 16 items per trip. Citizens can collect these materials when dropped by players too.
+## Diplomacy and trade
 
-Zombies favor gathering; skeletons favor regrouping. Sunlight or very low health makes citizens return to their shelter. Destroyed roofs are not repaired. Wild mobs retain vanilla behavior. Citizens do not attack players in M1; combat/diplomacy are not implemented.
+A four-emerald gift adds twelve reputation and, when applicable, twelve nation relationship points. Buy four bread for one emerald when stock/reputation permit and your nations are not at war. Barter exchanges four own planks for four foreign cobblestone under a valid treaty. Traders physically travel between nearby loaded settlements; abstract trade still conserves both inventories.
 
-## Natural founding
+NPC acceptance thresholds: trade 10, non-aggression 20, alliance 50, vassalage 80; peace requires at least −20. Player rulers must accept offers, which expire after three simulation days. War is immediate and cancels outstanding offers. The proposer becomes overlord upon accepted vassalage; tribute/control are not implemented. War and vassalage require UI confirmation. Guards and soldiers fight nearby enemy-nation residents and non-creative/non-spectator players. Physical envoys remain future work.
 
-After three world or simulated days, the server schedules up to eight site attempts every 30 seconds, spread across ticks. Completed simulated days also request a search. Overlapping requests coalesce; 365 days do not guarantee 365 camps.
+## Learning
 
-Only loaded Overworld sites 32 to about 136 blocks from players (including spectators) are considered. Sites require a flat, empty 3×3 area over grass blocks, dirt, sand, podzol, mycelium or snow blocks, adequate camp spacing and available population/camp capacity. Protect player land explicitly with `/civ protect`: player-placed natural blocks cannot be distinguished. No chunks are force-loaded. Failed searches retry later.
+Daily reports score food, labor and losses. A bounded bandit selects prosperity, expansion or security. Workshops unlock five sequential technologies using research and cobblestone: improved agriculture, masonry/walls, shields, flanking and controlled creeper siege breaches. Work and combat grant veteran experience. Arrow adaptation currently observes fatal arrow attacks, not every projectile. Equipment costs actual materials. `learningRate=0` disables adaptation, not production/research.
 
-These are starter civilizations with three new residents, not cities or converted wild mobs. Natural founding remains configurable.
+## Administration
 
-## Commands
+`/civ admin` adds admin controls. Use `/civ found <species>` with completion to test camps; `/civ info`, `/civ relations`, `/civ goals` inspect state. `/civ simulate 30` queues economic days (365 maximum); `/civ simulate cancel` cancels pending work. This does not speed up vanilla movement. `/civ speed 5` accelerates the entire server up to 5×, hardware permitting; `/civ speed 1` resets it. `/civ observe` enters spectator mode; click a mob to follow its camera, sneak to exit that camera, and use `/civ observe creative` or `survival` to leave spectator mode.
 
-All commands require Minecraft's `COMMANDS_GAMEMASTER` permission (normally operator level 2 or cheats).
+`/civ protect` protects the current chunk; `/civ unprotect` removes protection. Newly placed player block items conservatively protect their entire chunk by default, sometimes even after failed placement. Existing player builds must be protected manually. There is no external claim-mod integration. Configure growth, aggression, learning, population, founding and protection in `config/mobrealms.properties`, then restart.
 
-| Command | Effect |
-|---|---|
-| `/civ info` | Camps, population, simulated days and stock |
-| `/civ goals` | Citizen goals; no graphical overlay yet |
-| `/civ relations` | Camp relationships, always neutral (0) in M1 |
-| `/civ found mobrealms:zombie` | Found a zombie camp at your position |
-| `/civ found mobrealms:skeleton` | Found a skeleton camp at your position |
-| `/civ protect` | Protect the current chunk from this mod's gathering/founding |
-| `/civ unprotect` | Remove that protection |
-| `/civ admin` | Admin GUI: camps, simulation, cancellation and protection |
-| `/civ simulate <days>` | Queue 1–365 abstract days |
-| `/civ simulate cancel` | Cancel pending days |
+## Acceptance and limitations
 
-Protection does not block vanilla explosions or player actions. Player buildings are not automatically detected. Gathering respects the camp's claimed chunk and protected chunks.
+Test a copy of your world: establish a camp near wood and flat ground; donate supplies; observe farm/house construction; queue 30 days; trade and assign roles; restart and compare progress. With two players, verify treaty consent and ownership restrictions. Check multiple GUI scales. Reset time-lapse to 1× afterwards.
 
-## Admin GUI
+This is a development candidate, not a gameplay-validated release. Automated tests do not validate navigation, combat, rendering or multiplayer behavior. Each settlement is one polity; multi-city countries, automatic repairs, roads, full underground mines, dynamic technology trees and quests are not implemented. Terrain/resource scarcity can halt development; the atlas reports why.
 
-Open `/civ admin`. The native dialog shows camps/coordinates in pages of five, stored item totals, population, elapsed and pending days. Enter 1–365 days and press **Start simulation**. **Refresh** updates the snapshot; it is not a live feed. **Cancel pending days** stops remaining work. **Protect current chunk** protects your location.
-
-Every button runs a normal server command as the clicking player; permissions are checked again. Minecraft may ask for confirmation of privileged commands. The GUI does not pause the simulation. There is no additional GUI library; client-side Mob Realms supplies translations.
-
-## Background simulation
-
-Unloaded citizens remain associated with saved Minecraft entities through stable IDs. Existing cargo is delivered on the next abstract day. Empty citizens create no resources. Abstract extraction, population growth and warfare are not implemented yet.
-
-`/civ simulate` does not move loaded entities or change Minecraft clocks. The queue holds up to 365 days and persists progress, including the cursor within a day. Each daily task processes at most 32 citizens. Cancellation preserves transfers already completed. Backward world-clock jumps do not repeat daily processing, and forward jumps are capped at seven days.
-
-Offline progress is not implemented. Paused dedicated servers do not advance the simulation.
-
-## Configuration
-
-`config/mobrealms.properties` is generated on first server startup. Restart after changing it.
-
-| Key | Default | Meaning |
-|---|---:|---|
-| `maxCamps` | 8 | Maximum camps |
-| `maxPopulation` | 1000 | Maximum citizens |
-| `maxDetailed` | 100 | Simultaneously detailed citizens |
-| `aiInterval` | 20 | Ticks between staggered decisions |
-| `workPerTick` | 8 | Maximum queued tasks executed per tick |
-| `budgetMicros` | 2000 | Queue execution time target |
-| `graceDays` | 3 | World or simulated days before natural founding attempts |
-| `naturalCamps` | true | Enable natural founding |
-| `naturalIntervalSeconds` | 30 | Seconds between search rounds (5–3600) |
-| `naturalAttempts` | 8 | Site attempts per round (1–64), spread across ticks |
-
-The first three limits are stored with a new simulation; changes currently affect new simulations only. M1 has no growth, so population is at most three citizens per camp. Excess loaded citizens pause detailed AI. The budget covers queue execution, not all vanilla entity work, saves or one-time founding operations.
-
-## Saving and recovery
-
-State is stored at `<world>/mobrealms/realms.dat`; the previous valid file is `realms.dat.bak`. Corrupt saves are not silently overwritten. Loading errors stop startup; saving errors halt simulation and are logged.
-
-Back up the whole world before recovery. Entity files and mod state must agree, so prefer restoring a complete world backup. Minecraft chunks and the mod file are not one atomic transaction; process crashes during saves are not guaranteed to be fully consistent.
-
-## Gameplay acceptance checklist
-
-- Found both species; observe pickup, movement and actual delivery.
-- Spawn nearby wild mobs; confirm vanilla behavior.
-- Protect a free chunk; verify founding fails there.
-- Unload a citizen carrying cargo and advance an abstract day; return and check that neither cargo nor citizens duplicate.
-- Save/restart; compare IDs, stock and protected chunks.
-- Repeat on a dedicated server; check commands without operator permission.
-- Verify daylight sheltering and that distant camps do not force-load chunks.
-
-These gameplay checks have not yet been confirmed as passed. Core tests do not replace them.
-
-[Automated server installation](server-installation.md)
-
-Save format 1 remains readable and upgrades to format 2 on save. Older mod builds cannot read format 2; restore a full world backup before downgrading.
-
-Additional acceptance checks: open `/civ admin`, simulate 30 days, refresh, cancel, test pages and repeat without OP. Test natural camps in open terrain with `graceDays=0` after a restart, including protected land. These gameplay checks remain unconfirmed.
-
-## Visible time-lapse and observer camera
-
-`/civ speed 2` requests 40 TPS; `/civ speed 5` requests 100 TPS. This accelerates real movement, AI and world time for **everyone on the server**. Reset with `/civ speed 1` (20 TPS). Vanilla `/tick rate` permissions still apply, without privilege escalation; actual speed depends on server capacity. The mod does not persist this tick rate.
-
-`/civ observe` explicitly switches you to spectator: fly around the camp or click a mob to follow its camera. Sneak exits the mob camera. Use `/civ observe creative` or `/civ observe survival` to choose your return mode; previous modes are not saved automatically. For conventional third-person view stay in creative and press F5. This is not an automatic orbit camera.
-
-Healthy residents now patrol safe terrain inside their camp chunk at night if there are no gathering targets. Sun-sensitive residents stay sheltered by day; very small islands may lack reachable patrol targets. Patrols create no resources. Test gathering by dropping bones nearby at night. Abstract `/civ simulate 30` is distinct from visible time-lapse; production and city growth remain unimplemented.
+Save format 3 reads formats 1/2. Downgrading requires restoring a full world backup. The stopped-server upgrader creates one; update the client JAR too.

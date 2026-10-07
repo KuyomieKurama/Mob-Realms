@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "entity_type": "minecraft:pillager",
+  "gather_weight": 1,
+  "regroup_weight": 2,
+  "carrying_capacity": 16,
+  "avoids_sun": false,
+  "dimensions": [
+    "minecraft:overworld"
+  ]
+}

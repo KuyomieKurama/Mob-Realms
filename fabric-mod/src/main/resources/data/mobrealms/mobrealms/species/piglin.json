@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "entity_type": "minecraft:piglin",
+  "gather_weight": 1.5,
+  "regroup_weight": 1,
+  "carrying_capacity": 16,
+  "avoids_sun": false,
+  "dimensions": [
+    "minecraft:the_nether"
+  ]
+}

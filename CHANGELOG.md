@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0-dev — M2–M4 development candidate
+
+- Persistent settlement objectives, material-paid construction, food/housing growth, processing and equipment.
+- Eight species profiles, custom skinned human settlers, dimension-aware natural founding and expanding resource commons.
+- Player founding banner, claims, reputation, recruitment, roles, treaty consent, barter and basic combat.
+- Realm atlas with overview, territory map, diplomacy, residents and research; German/English localization.
+- Daily bounded bandit strategy, five technologies, veterans and fatal-arrow adaptation.
+- Save format 3 with legacy migration; installer/upgrade target updated, accepting 0.1/0.2 sources.
+- Known limits and gameplay acceptance instructions documented; this is not a stable or interactively validated release.
+
+
 ## 0.2.0-dev – admin and simulation expansion
 
 - `/civ admin`: native dialog with paginated camp snapshots, day input, cancellation and chunk protection; all actions retain player permissions.

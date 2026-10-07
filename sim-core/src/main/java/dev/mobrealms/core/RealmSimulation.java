@@ -16,7 +16,8 @@ public final class RealmSimulation {
                               Map<String, Long> cargo) {}
     public record Lease(UUID citizen, long generation) {}
     private static final class Citizen {
-        final UUID id, camp;
+        final UUID id;
+        UUID camp;
         final double diligence;
         final Stockpile cargo = new Stockpile();
         Mode mode = Mode.ABSTRACT;
@@ -30,12 +31,28 @@ public final class RealmSimulation {
     }
     private final LinkedHashMap<UUID, Camp> camps = new LinkedHashMap<>();
     private final NavigableMap<UUID, Citizen> citizens = new TreeMap<>();
+    private final Map<UUID,Set<UUID>> residents = new HashMap<>();
     private final Map<UUID, Stockpile> stores = new HashMap<>();
     private final Set<ChunkKey> protectedChunks = new HashSet<>();
     private final int maxCamps, maxPopulation, maxDetailed;
     public static final int MAX_PENDING_DAYS = 365;
     private int pendingDays;
     private UUID dayCursor;
+    private final Development development = new Development();
+    public Development development() { return development; }
+    public int population(UUID camp) { return residents.getOrDefault(camp,Set.of()).size(); }
+    public int citizenCount() { return citizens.size(); }
+    public List<CitizenView> residents(UUID camp) { return residents.getOrDefault(camp,Set.of()).stream().map(id -> required(id).view()).toList(); }
+    public void credit(UUID camp, String item, long count) { store(camp).add(item,count); }
+    public boolean consume(UUID camp, Map<String,Long> recipe) {
+        Stockpile stock = store(camp);
+        if (recipe.values().stream().anyMatch(n -> n <= 0)) throw new IllegalArgumentException("recipe");
+        if (recipe.entrySet().stream().anyMatch(e -> stock.count(e.getKey()) < e.getValue())) return false;
+        recipe.forEach(stock::take); return true;
+    }
+    public void recruit(UUID citizen, UUID destination) {
+        camp(destination); Citizen c = required(citizen); deliver(c); residents.get(c.camp).remove(citizen); c.camp = destination; residents.get(destination).add(citizen);
+    }
     private long day;
     private long observedWorldDay = -1;
     public RealmSimulation(int maxCamps, int maxPopulation, int maxDetailed) {
@@ -104,17 +121,17 @@ public final class RealmSimulation {
     public void unprotect(ChunkKey chunk) { protectedChunks.remove(chunk); }
     public boolean protectedAt(ChunkKey chunk) { return protectedChunks.contains(chunk); }
     public boolean canFound(ChunkKey chunk) {
-        return camps.size() < maxCamps && !protectedAt(chunk)
+        return camps.size() < maxCamps && !protectedAt(chunk) && !development.claimed(chunk)
                 && camps.values().stream().noneMatch(c -> c.territory().equals(chunk));
     }
     public void found(Camp camp) {
         if (camps.containsKey(camp.id()) || !canFound(camp.territory())) throw new IllegalStateException("Camp conflict/limit");
-        camps.put(camp.id(), camp); stores.put(camp.id(), new Stockpile());
+        camps.put(camp.id(), camp); stores.put(camp.id(), new Stockpile()); residents.put(camp.id(),new LinkedHashSet<>()); development.found(camp.id(),camp.territory());
     }
     public void addCitizen(UUID id, UUID camp, double diligence) {
         camp(camp);
         if (citizens.size() >= maxPopulation || citizens.containsKey(id)) throw new IllegalStateException("Citizen conflict/limit");
-        citizens.put(id, new Citizen(id, camp, diligence));
+        citizens.put(id, new Citizen(id, camp, diligence)); residents.get(camp).add(id); development.person(id).species=camp(camp).species();
     }
     public Lease activate(UUID id) {
         Citizen c = required(id);
@@ -152,7 +169,7 @@ public final class RealmSimulation {
         day = next;
     }
     /** Death destroys undelivered cargo; it must not also be dropped by the adapter. */
-    public void removeCitizen(UUID id) { required(id); citizens.remove(id); }
+    public void removeCitizen(UUID id) { residents.get(required(id).camp).remove(id); citizens.remove(id); development.removePerson(id); }
     void restoreDay(long day) { if (day < 0) throw new IllegalArgumentException("day"); this.day = day; }
     void restoreStock(UUID id, String item, long count) { store(id).add(item, count); }
     void restoreCargo(UUID id, String item, long count) { required(id).cargo.add(item, count); }

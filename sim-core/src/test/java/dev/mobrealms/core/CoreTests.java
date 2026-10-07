@@ -113,7 +113,7 @@ public final class CoreTests {
         check(s.day() == 366, "cancel corrupted next day");
     }
     private static void legacySave() throws Exception {
-        byte[] modern = RealmStore.encode(state());
+        byte[] modern = Base64.getDecoder().decode("TVJMTQAAAAIAAAAIAAAD6AAAAGQAAAAAAAAAAP//////////AAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAQbW9icmVhbG1zOnpvbWJpZQATbWluZWNyYWZ0Om92ZXJ3b3JsZP////8AAABA/////wAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAD/mZmZmZmZmAAAAAAAAAAAAAAAANmrkdQ==");
         // V2 inserts pending:int, hasCursor:boolean after the clocks at byte 36.
         byte[] legacy = new byte[modern.length - 5];
         System.arraycopy(modern, 0, legacy, 0, 36);
