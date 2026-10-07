@@ -13,8 +13,23 @@ public final class DevelopmentTests {
     private static void check(boolean c,String why){if(!c)throw new AssertionError(why);}
     private static void next(RealmSimulation s){s.advanceDay();s.development().daily(s,A,.2,1,2);}
     public static void main(String[] args)throws Exception{
-        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();identities();socialRanks();legacyNames();fairDetail();waitingCargo();basicSkills();
-        System.out.println("Passed 16 civilization scenarios.");
+        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();identities();socialRanks();legacyNames();fairDetail();waitingCargo();basicSkills();admission();
+        System.out.println("Passed 17 civilization scenarios.");
+    }
+    private static void admission() throws Exception {
+        var s=fixture();UUID id=new UUID(0,800);s.credit(A,"minecraft:bread",8);
+        check(!s.admit(id,A)&&s.stock(A).get("minecraft:bread")==8,"housing rejection spent food");
+        s.development().town(A).buildings.put(Building.HOUSE,1);
+        check(s.admit(id,A)&&s.hasCitizen(id)&&s.population(A)==4,"wild entity was not admitted");
+        check(s.stock(A).get("minecraft:bread")==4&&!s.admit(id,A)&&s.stock(A).get("minecraft:bread")==4,"duplicate admission charged twice");
+        var copy=RealmStore.decode(RealmStore.encode(s));check(copy.hasCitizen(id)&&!copy.development().person(id).name.isBlank(),"admission identity not persisted");
+        check(copy.development().chronicle().stream().anyMatch(e->e.contains(":recruitment:")),"recruitment not logged");
+        check(!copy.admit(new UUID(0,801),B),"abandoned camp recruited without residents");
+        copy.consume(A,Map.of("minecraft:bread",4L));check(!copy.admit(new UUID(0,802),A),"recruited without food");
+        var capped=new RealmSimulation(8,3,3);capped.found(new RealmSimulation.Camp(A,"mobrealms:human",new ChunkKey("minecraft:overworld",0,0),8,64,8));
+        for(int n=0;n<3;n++)capped.addCitizen(new UUID(0,n),A,.5);
+        capped.development().town(A).buildings.put(Building.HOUSE,1);capped.credit(A,"minecraft:bread",4);
+        check(!capped.admit(id,A)&&capped.stock(A).get("minecraft:bread")==4,"global population cap bypassed");
     }
     private static void fairDetail(){
         Map<UUID,List<UUID>> towns=new TreeMap<>();Map<UUID,UUID> membership=new HashMap<>();

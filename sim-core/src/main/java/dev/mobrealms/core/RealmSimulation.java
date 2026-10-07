@@ -136,6 +136,13 @@ public final class RealmSimulation {
         if (citizens.size() >= maxPopulation || citizens.containsKey(id)) throw new IllegalStateException("Citizen conflict/limit");
         citizens.put(id, new Citizen(id, camp, diligence)); residents.get(camp).add(id); development.person(id).species=camp(camp).species(); development.nameResident(id); if(development.town(camp).leader==null)development.town(camp).leader=id;
     }
+    /** Admission of an existing wild entity; no spawn and no replacement UUID. */
+    public boolean admit(UUID id, UUID camp) {
+        var town=development.town(camp);
+        if(hasCitizen(id)||citizenCount()>=maxPopulation||population(camp)==0||population(camp)>=town.housing())return false;
+        if(!consume(camp,Map.of("minecraft:bread",4L)))return false;
+        addCitizen(id,camp,.6);development.event("recruitment",camp,day);return true;
+    }
     public Lease activate(UUID id) {
         Citizen c = required(id);
         if (c.mode == Mode.DETAILED) throw new IllegalStateException("Already active");

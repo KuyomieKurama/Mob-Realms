@@ -1,3 +1,10 @@
+# 0.6.2-dev
+
+- Operator settlement teleport with bounded landing checks and dimension support.
+- Admin goal shortcuts and parameterized /civ and /realm command field.
+- Nearby wild-mob admission with housing, food, ownership exclusions and recruitment logs.
+- Regression coverage for admission, duplicate IDs, food, caps and persistence.
+
 # Changelog
 
 ## 0.6.1-dev — Fair civilization work

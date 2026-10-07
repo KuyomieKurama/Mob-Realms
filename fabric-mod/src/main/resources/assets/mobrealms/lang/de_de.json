@@ -237,5 +237,12 @@
   "obstacle.mobrealms.unloaded": "Lager-Chunk entladen; Weltaktionen pausiert",
   "screen.mobrealms.workers": "KI aktiv %s / Geladen %s · Nachwuchs wartet %s",
   "screen.mobrealms.ai_limits": "Weltlimits: detaillierte KI %s · Bewohner %s",
-  "goal.mobrealms.recover": "Mit gelagerter Nahrung erholen"
+  "goal.mobrealms.recover": "Mit gelagerter Nahrung erholen",
+  "screen.mobrealms.teleport": "Zur Siedlung",
+  "screen.mobrealms.goals": "KI-Ziele",
+  "screen.mobrealms.command": "Mod-Befehl",
+  "screen.mobrealms.execute": "Ausführen",
+  "screen.mobrealms.command_help": "Alle /civ- und /realm-Befehle, z. B. civ simulate 14, civ speed 3, civ found mobrealms:skeleton oder civ unprotect. Rückmeldung im Chat; Serverrechte gelten weiterhin.",
+  "commands.mobrealms.teleport_failed": "Keine sichere Landestelle oder Siedlung gefunden.",
+  "event.mobrealms.recruitment": "Wilder Mob angeworben"
 }

@@ -237,5 +237,12 @@
   "obstacle.mobrealms.unloaded": "Camp chunk unloaded; world actions paused",
   "screen.mobrealms.workers": "Active AI %s / Loaded %s · Newborns waiting %s",
   "screen.mobrealms.ai_limits": "World limits: detailed AI %s · Residents %s",
-  "goal.mobrealms.recover": "Recover with stored food"
+  "goal.mobrealms.recover": "Recover with stored food",
+  "screen.mobrealms.teleport": "Teleport to town",
+  "screen.mobrealms.goals": "AI goals",
+  "screen.mobrealms.command": "Mod command",
+  "screen.mobrealms.execute": "Execute",
+  "screen.mobrealms.command_help": "All /civ and /realm commands, e.g. civ simulate 14, civ speed 3, civ found mobrealms:skeleton or civ unprotect. Feedback appears in chat; server permissions still apply.",
+  "commands.mobrealms.teleport_failed": "No safe landing location or settlement found.",
+  "event.mobrealms.recruitment": "Wild mob recruited"
 }

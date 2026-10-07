@@ -1,6 +1,6 @@
-# Playing Mob Realms — 0.6.1-dev
+# Playing Mob Realms — 0.6.2-dev
 
-Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.1-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
+Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.2-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
 
 ## Settlements
 
@@ -85,3 +85,14 @@ Realm members relinquish vanilla goals. Targeted hooks prevent skeleton equipmen
 Unloaded camp chunks prevent new world actions. Existing farms and known funded projects can progress abstractly; unexplored terrain does not yield invented resources. Other blockers include missing resources, protected land, inaccessible paths and terrain. Construction now surveys nine positions per chunk, without automatically leveling hills.
 
 Manual acceptance: compare eight loaded settlements across day/night, observe AI allocations, equip a skeleton and check continued work, observe enderman daylight behavior, then unload camps and verify status. Compilation/tests do not replace this gameplay check.
+
+
+## Admin actions and encounters (0.6.2)
+
+**Admin → World → Teleport to town** visits the selected settlement across dimensions. `/civ tp <settlement UUID>` searches within eight horizontal/vertical blocks for a clear landing above solid ground; failure leaves you in place. Destination chunks load. Nearby hazards and hostile residents remain possible.
+
+**AI goals** opens the selected town's resident list. The command field accepts all `/civ` and `/realm` commands with parameters, including `civ simulate 14`, `civ speed 3`, `civ unprotect`, `civ relations` and `civ found mobrealms:creeper`. Execution closes the screen; results/errors appear in chat. Server permission and ownership checks remain authoritative. This is a command field without completion, rather than a separate form for every command. The resident list currently shows up to 256 people per town; `/civ goals` lists everyone.
+
+Active residents near home can admit adult wild mobs of the same species within four blocks and line of sight, when neither is fighting. Admission requires four bread, housing and global population capacity. Named, persistent, tameable, leashed, mounted and already registered entities are excluded. Each town has a one-minute successful-admission cooldown at 20 TPS, reset on server restart. Identity, membership and recruitment log events persist. This is local wild-mob admission, not diplomacy with another civilization.
+
+Manual checks: teleport between towns/dimensions, invalid UUID and non-OP permission denial; run a custom simulation duration from the command field. Near a resident within twelve blocks of home, spawn an unnamed adult matching the town species with housing and four bread available. Allow five seconds per settlement for a scan; check membership, name, bread and log. Repeat with no food, full housing and a named mob: no admission.

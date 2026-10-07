@@ -1,8 +1,8 @@
-# Mob Realms spielen — 0.6.1-dev
+# Mob Realms spielen — 0.6.2-dev
 
 ## Installation und Einstieg
 
-Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.1-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
+Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.2-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
 
 Beginne in einer Testwelt auf Normal. `/realm` öffnet den Reichsatlas. Er zeigt einen Server-Schnappschuss; **Aktualisieren** lädt aktuelle Werte. Gold markiert die gewählte Siedlung, Türkis aktive Entwicklung. Übersicht und Forschung lassen sich mit dem Mausrad scrollen. Die Karte zeigt beanspruchte Chunks der aktuellen Siedlungsseite und Dimension, keine Landschaft.
 
@@ -76,7 +76,7 @@ Die Konfiguration unter `config/mobrealms.properties` enthält Wachstumsdauer, A
 
 Teste zuerst in einer Kopie deiner Welt: Lager bei Wald und ebener Freifläche gründen, Vorräte spenden, Bau bis Feld und Haus beobachten, 30 Tage simulieren, Rollen und Handel prüfen, speichern/neustarten und Baufortschritt vergleichen. Prüfe mit zwei Spielern, dass Verträge Zustimmung benötigen und fremde Rollen nicht geändert werden können. Teste UI bei verschiedenen GUI-Skalierungen und Zeitraffer anschließend wieder auf 1× zurücksetzen.
 
-0.6.1-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
+0.6.2-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
 
 Speicherformat 4 liest alte Formate 1/2/3. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.
 
@@ -128,3 +128,14 @@ Nur Zivilisationsbewohner erhalten die Mod-Arbeitssteuerung. Vanilla-Ziele werde
 Ein unbeladener Lager-Chunk verhindert neue Weltaktionen. Bereits vorhandene Farmen und bekannte, finanzierbare Projekte können abstrakt weiterlaufen, aber es gibt kein Erkunden unbekannten Geländes und kein Erz aus dem Nichts. Andere Gründe bleiben fehlende Rohstoffe, Schutzgebiete, unpassierbare Wege und ungeeignetes Gelände. Die Bauplatzsuche probiert jetzt neun Positionen je Chunk statt nur dessen Mitte; sie planiert keine Hügel automatisch.
 
 Zum Prüfen acht Lager im geladenen Bereich aufstellen, Tag und Nacht beobachten und aktive KI-Zahlen vergleichen. Nach Ausrüstungswechsel eines Skeletts weiter Rohstoffsuche prüfen; Endermen sollen nicht durch Tageslicht verschwinden. Bei entladenen Lagern den expliziten Status erwarten. Diese Welt-/Wegfindungstests sind trotz erfolgreichem Build noch manuell durchzuführen.
+
+
+## Admin-Aktionen und Begegnungen (0.6.2)
+
+Unter **Admin → Welt → Zur Siedlung** teleportierst du dich zur links ausgewählten Siedlung, auch dimensionsübergreifend. Der Server sucht im Umkreis von acht Blöcken und acht Höhenblöcken eine freie Landestelle mit festem Boden. Ohne passende Stelle schlägt die Aktion fehl. Das lädt Zielchunks; es gibt keine Garantie gegen angrenzende Gefahren oder feindliche Bewohner. Befehl: `/civ tp <Siedlungs-UUID>`.
+
+**KI-Ziele** öffnet die Bewohnerliste mit Namen, Rang, Aufgabe und aktuellem Ziel. Wähle links die gewünschte Siedlung. Das Befehlsfeld unter Simulation/Welt unterstützt sämtliche `/civ`- und `/realm`-Befehle einschließlich Parameter, etwa `civ simulate 14`, `civ speed 3`, `civ unprotect`, `civ relations` oder `civ found mobrealms:creeper`. Ausführen schließt das Fenster; Ergebnisse und Fehler erscheinen im Chat. Die bestehenden Server- und Eigentumsprüfungen bleiben aktiv. Es ist ein Befehlsfeld ohne Autovervollständigung, kein eigener Formularassistent für jeden Befehl. Die Bewohneransicht zeigt derzeit höchstens 256 Bewohner je Siedlung; `/civ goals` erreicht alle.
+
+Aktive Bewohner können wilde erwachsene Mobs derselben Spezies bei einer Begegnung innerhalb von vier Blöcken aufnehmen. Voraussetzungen: Nähe zum Lager (zwölf Blöcke), Sichtkontakt, kein aktuelles Kampfziel, mindestens vier Brot und freier Wohnraum sowie Platz im globalen Bevölkerungslimit. Der Mob behält seine UUID und erhält einen Namen und Zivilisations-KI. Benannte, persistente, gezähmte, angeleinte, berittene und bereits registrierte Mobs sind ausgeschlossen. Pro Lager gilt nach Erfolg eine Minute Pause bei 20 TPS; diese Begegnungspause beginnt nach einem Serverneustart neu. Aufnahme und Identität werden gespeichert, Anwerbungen erscheinen in den Admin-Logs. Dies ist lokale Aufnahme wilder Mobs, keine Diplomatie mit fremden Bewohnern.
+
+Test: Zwei Siedlungen auswählen und jeweils teleportieren; auch Nether-Siedlung und ungültige UUID prüfen. Als Nicht-OP `/civ tp` versuchen. `civ simulate 14` im Befehlsfeld ausführen und Ziele prüfen. Bei einem bewohnten Lager mit Haus und vier Brot einen unbenannten erwachsenen Mob passender Spezies nahe einem aktiven Bewohner spawnen; nach spätestens einer Runde durch alle Siedlungen (fünf Sekunden je Siedlung) Aufnahme, Brotverbrauch, Namen und Log prüfen. Mit vollem Wohnraum, ohne Brot und benanntem Mob wiederholen: keine Aufnahme.

@@ -103,6 +103,9 @@ public final class MobRealms implements ModInitializer {
                     var source = ctx.getSource(); source.getPlayerOrException();
                     source.getServer().getCommands().performPrefixedCommand(source, "gamemode survival @s"); return 1;
                 })))
+                .then(Commands.literal("tp").then(Commands.argument("settlement", net.minecraft.commands.arguments.UuidArgument.uuid())
+                    .suggests((ctx,builder)->{require(ctx.getSource()).state().camps().forEach(c->builder.suggest(c.id().toString()));return builder.buildFuture();})
+                    .executes(ctx->SettlementTeleport.teleport(ctx.getSource(),require(ctx.getSource()),net.minecraft.commands.arguments.UuidArgument.getUuid(ctx,"settlement")))))
                 .then(Commands.literal("info").executes(ctx -> info(ctx.getSource())))
                 .then(Commands.literal("relations").executes(ctx -> {
                     var c = require(ctx.getSource());

@@ -16,12 +16,13 @@ public final class RealmScreen extends Screen {
     private boolean selectedLogs;
     private int left,top,panelW,panelH,mainX,mainW;
     private String confirm;
+    private String commandDraft="civ info";
     private static final int GOLD=0xffe5bd7c,INK=0xff101920,PAPER=0xffe9e2d2,MUTED=0xff9caeb7,TEAL=0xff6ec9b6;
     private static final String[] TABS={"overview","map","diplomacy","people","research","admin"};
     public RealmScreen(JsonObject data){super(Component.translatable("screen.mobrealms.title"));this.data=data;if(data.has("focusAdmin")&&data.get("focusAdmin").getAsBoolean())tab=5;}
     public void update(JsonObject next){
         if(!str(data,"selected").equals(str(next,"selected"))){confirm=null;peoplePage=0;scroll=0;}
-        data=next;rebuildWidgets();
+        data=next;if(!(tab==5&&adminPage!=2&&getFocused() instanceof net.minecraft.client.gui.components.EditBox))rebuildWidgets();
     }
     @Override public void tick(){
         super.tick();if(++refreshTicks>=100){refreshTicks=0;refresh();}
@@ -108,13 +109,17 @@ public final class RealmScreen extends Screen {
         button(mainX+nav+4,top+75,nav,"world",()->{adminPage=1;rebuildWidgets();},adminPage==1);
         button(mainX+2*(nav+4),top+75,nav,"logs",()->{adminPage=2;logPage=0;rebuildWidgets();},adminPage==2);
         if(adminPage==2){logControls();return;}
+        if(adminPage==1){
+            button(mainX,top+98,w,"teleport",()->{send("civ tp "+str(data,"selected"));onClose();},false).active=!str(data,"selected").isEmpty();
+            button(mainX+w+6,top+98,w,"goals",()->selectTab(3),false).active=data.has("detail");
+        }
         if(adminPage==0){
             int[] days={1,7,30,365};
             for(int i=0;i<days.length;i++){int n=days[i];
                 button(mainX+(i%2)*(w+6),top+122+(i/2)*24,w,"days_"+n,()->send("civ simulate "+n),false).active=number(data,"queued")+n<=365;
             }
             button(mainX,top+170,w,"cancel_queue",()->send("civ simulate cancel"),false).active=number(data,"queued")>0;
-            button(mainX+w+6,top+170,w,"refresh",this::refresh,false);
+            button(mainX+w+6,top+170,w,"goals",()->selectTab(3),false).active=data.has("detail");
         }else{
             button(mainX,top+122,w,"normal",()->send("civ speed 1"),false);
             button(mainX+w+6,top+122,w,"speed",()->{confirm="speed";rebuildWidgets();},false);
@@ -123,6 +128,13 @@ public final class RealmScreen extends Screen {
             button(mainX,top+170,w,"protect",()->send("civ protect"),false);
             button(mainX+w+6,top+170,w,"creative",()->{send("civ observe creative");onClose();},false);
         }
+        var input=new net.minecraft.client.gui.components.EditBox(font,mainX,top+199,Math.max(30,mainW-64),19,tr("command"));
+        input.setMaxLength(256);input.setValue(commandDraft);input.setResponder(value->commandDraft=value);
+        input.setTooltip(net.minecraft.client.gui.components.Tooltip.create(tr("command_help")));addRenderableWidget(input);
+        button(mainX+mainW-60,top+199,60,"execute",()->{
+            String command=commandDraft.strip();if(command.startsWith("/"))command=command.substring(1);
+            if(command.equals("civ")||command.startsWith("civ ")||command.equals("realm")||command.startsWith("realm ")){send(command);onClose();}
+        },false);
     }
     private void logControls(){
         var lines=new ArrayList<JsonObject>();
@@ -157,9 +169,9 @@ public final class RealmScreen extends Screen {
         if(confirm!=null)g.textWithWordWrap(font,tr("confirm_"+confirm),mainX,top+76,mainW,GOLD);
         else if(tab==5){
             boolean halted=data.has("healthy")&&!data.get("healthy").getAsBoolean();
-            text(g,halted?tr("halted"):tr(adminPage==2?"log_status":"admin_status",adminPage==2?logPage+1:number(data,"queued")),mainX,top+101,halted?0xffef8585:TEAL);
+            if(adminPage!=1)text(g,halted?tr("halted"):tr(adminPage==2?"log_status":"admin_status",adminPage==2?logPage+1:number(data,"queued")),mainX,top+101,halted?0xffef8585:TEAL);
             if(adminPage==0&&panelH>275){text(g,tr("settlement_target",number(data,"settlementTarget")),mainX,top+246,GOLD);text(g,tr("ai_limits",number(data,"maxDetailed"),number(data,"maxPopulation")),mainX,top+264,MUTED);}
-            if(adminPage!=2)g.textWithWordWrap(font,tr(adminPage==0?"admin_help":"world_help"),mainX,top+199,mainW,MUTED);
+            if(adminPage!=2&&panelH>290)g.textWithWordWrap(font,tr("command_help"),mainX,top+286,mainW,MUTED);
         }
         else if(!data.has("detail"))g.textWithWordWrap(font,tr("empty"),mainX,top+84,mainW,PAPER);
         else switch(tab){

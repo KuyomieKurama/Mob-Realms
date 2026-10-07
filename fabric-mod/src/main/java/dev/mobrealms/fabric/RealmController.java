@@ -139,6 +139,30 @@ public final class RealmController {
         if (!healthy || !state.enqueueDays(days)) return false;
         save(); return healthy;
     }
+    private final Map<UUID,Long> recruitmentCooldown=new HashMap<>();
+    private int recruitmentCursor;
+    private void recruitNearby(){
+        var camps=state.camps();if(camps.isEmpty())return;
+        var camp=camps.get(Math.floorMod(recruitmentCursor++,camps.size()));
+        if(ticks<recruitmentCooldown.getOrDefault(camp.id(),0L)||state.population(camp.id())>=state.development().town(camp.id()).housing())return;
+        var home=new BlockPos(camp.x(),camp.y(),camp.z());
+        Mob recruiter=loaded.values().stream().filter(m->m.isAlive()&&leases.containsKey(m.getUUID())&&state.citizen(m.getUUID()).camp().equals(camp.id())&&m.getTarget()==null&&m.blockPosition().distSqr(home)<=144).findFirst().orElse(null);
+        if(recruiter==null)return;
+        var level=(ServerLevel)recruiter.level();
+        if(!dimension(level).equals(camp.territory().dimension()))return;
+        String type=profile(camp.species()).entityType();
+        var candidates=level.getEntitiesOfClass(Mob.class,recruiter.getBoundingBox().inflate(4),m->
+            m.isAlive()&&!m.isBaby()&&!state.hasCitizen(m.getUUID())&&!m.hasCustomName()&&!m.isPersistenceRequired()
+            &&!m.isLeashed()&&!m.isPassenger()&&!m.isVehicle()&&!(m instanceof net.minecraft.world.entity.TamableAnimal)
+            &&m.getTarget()==null&&net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(m.getType()).toString().equals(type));
+        for(var candidate:candidates){
+            if(!recruiter.hasLineOfSight(candidate))continue;
+            recruiter.getLookControl().setLookAt(candidate,30,30);
+            if(state.admit(candidate.getUUID(),camp.id())){
+                loadEntity(candidate);recruitmentCooldown.put(camp.id(),ticks+1200L);return;
+            }
+        }
+    }
     public void tick() {
         if (!healthy) return;
         ticks++;
@@ -179,6 +203,7 @@ public final class RealmController {
             });
         }
         if(!economyQueued && (ticks % 10 == 0 || economy.busy()))economyQueued=scheduler.submit(() -> {economyQueued=false;economy.step();});
+        if(ticks%100==0)scheduler.submit(this::recruitNearby);
         scheduler.run(config.budgetNanos(), config.workPerTick());
     }
     private void update(Mob mob) {
