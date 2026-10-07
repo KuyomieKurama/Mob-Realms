@@ -4,7 +4,7 @@ import java.util.*;
 
 /** Single-thread-owned domain state. Minecraft objects must never enter this class. */
 public final class RealmSimulation {
-    public enum Mode { ABSTRACT, DETAILED }
+    public enum Mode { ABSTRACT, DETAILED, WAITING }
     public record Camp(UUID id, String species, ChunkKey territory, int x, int y, int z) {
         public Camp {
             Objects.requireNonNull(id); Objects.requireNonNull(species); Objects.requireNonNull(territory);
@@ -145,6 +145,9 @@ public final class RealmSimulation {
         c.mode = Mode.DETAILED; c.generation = next;
         return new Lease(id, next);
     }
+    public void waitForDetail(Lease lease){leased(lease).mode=Mode.WAITING;}
+    public void markLoadedWaiting(UUID id){var c=required(id);if(c.mode!=Mode.DETAILED)c.mode=Mode.WAITING;}
+    public void markUnloaded(UUID id){var c=required(id);if(c.mode==Mode.DETAILED)throw new IllegalStateException("Active lease");c.mode=Mode.ABSTRACT;}
     public void deactivate(Lease lease) {
         Citizen c = leased(lease); c.mode = Mode.ABSTRACT;
     }

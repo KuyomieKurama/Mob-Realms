@@ -230,5 +230,12 @@
   "rank.mobrealms.realm_civilian_senior": "Patrizier",
   "rank.mobrealms.realm_military_junior": "Legionär",
   "rank.mobrealms.realm_military_senior": "Kommandant",
-  "rank.mobrealms.realm_leader": "Herrscher"
+  "rank.mobrealms.realm_leader": "Herrscher",
+  "goal.mobrealms.budget": "Wartet auf rotierenden KI-Platz",
+  "goal.mobrealms.abstract": "Entladen: abstrakte Simulation",
+  "goal.mobrealms.pending": "Wartet auf sicheren Erscheinungsort",
+  "obstacle.mobrealms.unloaded": "Lager-Chunk entladen; Weltaktionen pausiert",
+  "screen.mobrealms.workers": "KI aktiv %s / Geladen %s · Nachwuchs wartet %s",
+  "screen.mobrealms.ai_limits": "Weltlimits: detaillierte KI %s · Bewohner %s",
+  "goal.mobrealms.recover": "Mit gelagerter Nahrung erholen"
 }

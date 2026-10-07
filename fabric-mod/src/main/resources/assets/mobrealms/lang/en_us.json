@@ -230,5 +230,12 @@
   "rank.mobrealms.realm_civilian_senior": "Patrician",
   "rank.mobrealms.realm_military_junior": "Legionary",
   "rank.mobrealms.realm_military_senior": "Commander",
-  "rank.mobrealms.realm_leader": "Sovereign"
+  "rank.mobrealms.realm_leader": "Sovereign",
+  "goal.mobrealms.budget": "Waiting for a rotating AI slot",
+  "goal.mobrealms.abstract": "Unloaded: abstract simulation",
+  "goal.mobrealms.pending": "Awaiting a safe spawn",
+  "obstacle.mobrealms.unloaded": "Camp chunk unloaded; world actions paused",
+  "screen.mobrealms.workers": "Active AI %s / Loaded %s · Newborns waiting %s",
+  "screen.mobrealms.ai_limits": "World limits: detailed AI %s · Residents %s",
+  "goal.mobrealms.recover": "Recover with stored food"
 }

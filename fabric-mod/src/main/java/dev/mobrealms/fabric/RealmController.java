@@ -36,6 +36,8 @@ public final class RealmController {
     private final UtilityBrain brain = new UtilityBrain();
     private final EconomyController economy;
     private boolean economyQueued;
+    private final DetailAllocation detailAllocation=new DetailAllocation();
+    private boolean allocationDirty=true;
     private long ticks;
     private boolean dayQueued, naturalQueued;
     private int naturalAttemptsLeft;
@@ -62,7 +64,11 @@ public final class RealmController {
     public RealmSimulation.Lease lease(UUID id) { return leases.get(id); }
     public RealmSimulation state() { return state; }
     public List<String> species() { return definitions.ids(); }
-    public String goal(UUID id) { String work=economy.activity(id); return work.equals("idle") ? goals.getOrDefault(id, UtilityBrain.Goal.IDLE).name().toLowerCase(Locale.ROOT) : work; }
+    public String goal(UUID id) {
+        if(state.development().person(id).pendingSpawn)return "pending";
+        if(state.citizen(id).mode()==RealmSimulation.Mode.WAITING)return "budget";
+        if(state.citizen(id).mode()==RealmSimulation.Mode.ABSTRACT)return "abstract";
+        String work=economy.activity(id); return work.equals("idle") ? goals.getOrDefault(id, UtilityBrain.Goal.IDLE).name().toLowerCase(Locale.ROOT) : work; }
     public int pendingDays() { return state.pendingDays(); }
     public RealmConfig config() { return config; }
     public int cancelDays() { int count = state.cancelDays(); save(); return count; }
@@ -85,7 +91,7 @@ public final class RealmController {
         access.mobrealms$targets().removeAllGoals(g -> true);
         access.mobrealms$goals().addGoal(0, new FloatGoal(mob));
         mob.setTarget(null); mob.setPersistenceRequired(); mob.setCanPickUpLoot(false);
-        activate(mob);
+        state.markLoadedWaiting(mob.getUUID());mob.setNoAi(true);allocationDirty=true;
     }
     private void updateIdentity(Mob mob){
         var p=state.development().person(mob.getUUID());
@@ -98,17 +104,30 @@ public final class RealmController {
         if (leases.size() >= state.maxDetailed()) { mob.setNoAi(true); return; }
         leases.put(mob.getUUID(), state.activate(mob.getUUID())); mob.setNoAi(false);
     }
+    private void allocateDetail(){
+        Map<UUID,List<UUID>> towns=new TreeMap<>();
+        for(var mob:loaded.values())if(mob.isAlive()&&state.hasCitizen(mob.getUUID()))towns.computeIfAbsent(state.citizen(mob.getUUID()).camp(),id->new ArrayList<>()).add(mob.getUUID());
+        towns.values().forEach(list->list.sort(UUID::compareTo));
+        var selected=detailAllocation.select(towns,state.maxDetailed());
+        for(UUID id:new ArrayList<>(leases.keySet()))if(!selected.contains(id)){
+            state.waitForDetail(leases.remove(id));var mob=loaded.get(id);if(mob!=null){mob.getNavigation().stop();mob.setNoAi(true);}
+        }
+        for(UUID id:selected)activate(loaded.get(id));allocationDirty=false;
+    }
+    public int activeResidents(UUID camp){return (int)leases.keySet().stream().filter(id->state.hasCitizen(id)&&state.citizen(id).camp().equals(camp)).count();}
+    public int loadedResidents(UUID camp){return (int)loaded.keySet().stream().filter(id->state.hasCitizen(id)&&state.citizen(id).camp().equals(camp)).count();}
     public void unloadEntity(Entity entity) {
         UUID id = entity.getUUID(); loaded.remove(id); goals.remove(id);
         var lease = leases.remove(id);
         if (lease != null && state.hasCitizen(id)) state.deactivate(lease);
+        if(state.hasCitizen(id))state.markUnloaded(id);allocationDirty=true;
         if (entity instanceof Mob mob && mob.isDeadOrDying()) died(mob);
     }
     public void died(Mob mob) {
         UUID id=mob.getUUID();if(!state.hasCitizen(id))return;
         economy.death(mob);state.recordDeath(id);
         loaded.remove(id);leases.remove(id);goals.remove(id);queued.remove(id);
-        mob.getNavigation().stop();
+        mob.getNavigation().stop();allocationDirty=true;
     }
     public void save() {
         if (!healthy) return;
@@ -139,9 +158,9 @@ public final class RealmController {
                 }
             });
         }
+        if(allocationDirty||ticks%200==0)allocateDetail();
         for (var mob : loaded.values()) {
             if (!mob.isAlive()) continue;
-            activate(mob);
             if (!leases.containsKey(mob.getUUID())) continue;
             if (Math.floorMod(mob.getUUID().hashCode(), config.aiInterval()) != ticks % config.aiInterval()) continue;
             UUID id = mob.getUUID();
@@ -170,8 +189,9 @@ public final class RealmController {
         if (!dimension(level).equals(camp.territory().dimension())) { mob.getNavigation().stop(); return; }
         var profile = profileFor(mob.getUUID());
         BlockPos home = economy.home(mob.getUUID(),camp);
+        economy.recover(mob,camp,new BlockPos(camp.x(),camp.y(),camp.z()));
         double distance = Math.sqrt(mob.distanceToSqr(home.getX() + .5, home.getY(), home.getZ() + .5));
-        boolean sunny = Math.floorMod(level.getOverworldClockTime(), 24000L) < 12000 && !level.isRaining();
+        boolean sunny = level.dimensionType().hasSkyLight() && level.isBrightOutside() && !level.isRaining();
         if((!sunny || !profile.avoidsSun()) && mob.getHealth() >= mob.getMaxHealth()*.25 && citizen.cargo().isEmpty() && economy.work(mob,level,camp)) { goals.put(mob.getUUID(),UtilityBrain.Goal.IDLE); return; }
         ItemEntity target = null;
         if (!sunny || !profile.avoidsSun()) {
@@ -182,10 +202,14 @@ public final class RealmController {
                 !citizen.cargo().isEmpty(), target != null, distance, citizen.diligence()));
         goals.put(mob.getUUID(), goal);
         switch (goal) {
-            case SHELTER, REGROUP -> mob.getNavigation().moveTo(home.getX() + .5, home.getY(), home.getZ() + .5, 1.0);
+            case SHELTER, REGROUP -> {
+                var refuge=mob.getHealth()<mob.getMaxHealth()*.25?new BlockPos(camp.x(),camp.y(),camp.z()):home;
+                mob.getNavigation().moveTo(refuge.getX()+.5,refuge.getY(),refuge.getZ()+.5,1.0);
+            }
             case DELIVER -> {
-                if (distance < 2.5) { state.deliver(leases.get(mob.getUUID())); mob.getNavigation().stop(); }
-                else mob.getNavigation().moveTo(home.getX() + .5, home.getY(), home.getZ() + .5, 1.0);
+                var depot=new BlockPos(camp.x(),camp.y(),camp.z());
+                if(mob.distanceToSqr(depot.getX()+.5,depot.getY(),depot.getZ()+.5)<16){state.deliver(leases.get(mob.getUUID()));mob.getNavigation().stop();}
+                else economy.approach(mob,level,depot);
             }
             case GATHER -> {
                 if (target == null) break;

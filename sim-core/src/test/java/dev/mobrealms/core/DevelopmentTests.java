@@ -13,8 +13,32 @@ public final class DevelopmentTests {
     private static void check(boolean c,String why){if(!c)throw new AssertionError(why);}
     private static void next(RealmSimulation s){s.advanceDay();s.development().daily(s,A,.2,1,2);}
     public static void main(String[] args)throws Exception{
-        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();identities();socialRanks();legacyNames();
-        System.out.println("Passed 13 civilization scenarios.");
+        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();identities();socialRanks();legacyNames();fairDetail();waitingCargo();basicSkills();
+        System.out.println("Passed 16 civilization scenarios.");
+    }
+    private static void fairDetail(){
+        Map<UUID,List<UUID>> towns=new TreeMap<>();Map<UUID,UUID> membership=new HashMap<>();
+        for(int t=0;t<8;t++){UUID town=new UUID(1,t);var residents=new ArrayList<UUID>();for(int i=0;i<96;i++){UUID id=new UUID(t+2,i);residents.add(id);membership.put(id,town);}towns.put(town,residents);}
+        var allocation=new DetailAllocation();Set<UUID> seen=new HashSet<>();
+        for(int window=0;window<8;window++){
+            var selected=allocation.select(towns,100);check(selected.size()==100,"detailed budget exceeded or wasted");seen.addAll(selected);
+            Set<UUID> served=new HashSet<>();for(UUID id:selected)served.add(membership.get(id));check(served.size()==8,"one settlement monopolized AI slots");
+        }
+        check(seen.size()==768,"loaded residents permanently starved");
+        allocation=new DetailAllocation();Set<UUID> served=new HashSet<>();for(int w=0;w<8;w++)for(UUID id:allocation.select(towns,1))served.add(membership.get(id));check(served.size()==8,"small budget starves settlements");
+        check(allocation.select(Map.of(),100).isEmpty(),"empty world allocation");
+    }
+    private static void waitingCargo(){
+        var s=fixture();UUID id=new UUID(0,10);var lease=s.activate(id);s.collect(lease,"minecraft:oak_log",3,16);s.waitForDetail(lease);s.advanceDay();
+        check(s.citizen(id).cargo().get("minecraft:oak_log")==3&&s.stock(A).getOrDefault("minecraft:oak_log",0L)==0,"budget pause teleported cargo");
+        boolean stale=false;try{s.deliver(lease);}catch(IllegalStateException expected){stale=true;}check(stale,"paused lease remained valid");
+        var active=s.activate(id);s.deliver(active);check(s.stock(A).get("minecraft:oak_log")==3,"resumed delivery failed");s.waitForDetail(active);s.markUnloaded(id);check(s.citizen(id).mode()==RealmSimulation.Mode.ABSTRACT,"unload left resident waiting");
+    }
+    private static void basicSkills(){
+        check(ProductionNeeds.needsWorkers(3,0,0),"starter settlement lacks innate worker priority");
+        check(ProductionNeeds.needsWorkers(50,0,0),"first farm not prioritized");
+        check(ProductionNeeds.needsWorkers(50,5,1),"starvation did not recall workers");
+        check(!ProductionNeeds.needsWorkers(50,5,0),"healthy town cannot specialize");
     }
     private static void identities()throws Exception{
         Set<String> names=new HashSet<>();for(long i=1;i<=100000;i++)check(names.add(ResidentNames.fromSequence(i)),"duplicate generated identity");

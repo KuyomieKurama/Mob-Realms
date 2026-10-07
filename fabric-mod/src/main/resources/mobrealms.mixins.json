@@ -4,7 +4,9 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": [
     "MobGoalsAccess",
-    "PiglinCivilizationAI"
+    "PiglinCivilizationAI",
+    "SkeletonCivilizationAI",
+    "EndermanCivilizationAI"
   ],
   "injectors": {
     "defaultRequire": 1

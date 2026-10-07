@@ -24,6 +24,7 @@ public final class EconomyController {
     private final Blueprints blueprints=new Blueprints();
     private final ArrayDeque<UUID> daily=new ArrayDeque<>();
     private int cursor;
+    private final Map<UUID,Integer> siteSurveys=new HashMap<>();
     private final Map<UUID,String> reportedObstacle=new HashMap<>();
     private final Map<UUID,Long> reportedAt=new HashMap<>();
     private final Map<UUID,BlockPos> targets=new HashMap<>();
@@ -31,6 +32,7 @@ public final class EconomyController {
     private final Map<UUID,Integer> surveys=new HashMap<>();
     private final Map<UUID,String> activities=new HashMap<>();
     private final Map<UUID,Long> attacks=new HashMap<>();
+    private final Map<UUID,Long> meals=new HashMap<>();
     public EconomyController(RealmController controller,MinecraftServer server)throws IOException{
         this.controller=controller;this.server=server;this.state=controller.state();blueprints.reload(server.getResourceManager());
     }
@@ -55,7 +57,9 @@ public final class EconomyController {
         if(!town.obstacle.equals(previous)&&now-reportedAt.getOrDefault(camp.id(),-200L)>=200){
             state.development().event("obstacle_"+town.obstacle,camp.id(),state.day());reportedObstacle.put(camp.id(),town.obstacle);reportedAt.put(camp.id(),now);
         }
-        ServerLevel level=level(camp);if(level==null||!level.hasChunkAt(new BlockPos(camp.x(),camp.y(),camp.z())))return;
+        if(state.population(camp.id())==0){town.obstacle="abandoned";return;}
+        ServerLevel level=level(camp);if(level==null||!level.hasChunkAt(new BlockPos(camp.x(),camp.y(),camp.z()))){town.obstacle="unloaded";return;}
+        if(town.obstacle.equals("unloaded")||town.obstacle.equals("abandoned"))town.obstacle="survey";
         for(var citizen:state.residents(camp.id()))if(state.development().person(citizen.id()).pendingSpawn){spawn(level,camp,citizen.id());return;}
         checkSite(level,town);
         if(town.project!=null&&(town.project.progress<town.project.paid||town.project.next()==null)){build(null,level,camp,town);return;}
@@ -110,9 +114,11 @@ public final class EconomyController {
     private void plan(ServerLevel level,RealmSimulation.Camp camp,Town town){
         var objective=town.objective(state.population(camp.id()));
         // One compact building per claimed chunk; the founding chunk remains the gathering commons.
-        var random=level.getRandom();var edge=new ArrayList<>(town.claims);var base=edge.get(random.nextInt(edge.size()));
-        int side=random.nextInt(4);var chunk=new ChunkKey(base.dimension(),base.x()+(side==0?1:side==1?-1:0),base.z()+(side==2?1:side==3?-1:0));
-        BlockPos center=new BlockPos(chunk.x()*16+8,camp.y(),chunk.z()*16+8);
+        var candidates=new LinkedHashSet<ChunkKey>();
+        for(var base:town.claims)for(int side=0;side<4;side++)candidates.add(new ChunkKey(base.dimension(),base.x()+(side==0?1:side==1?-1:0),base.z()+(side==2?1:side==3?-1:0)));
+        var plots=new ArrayList<>(candidates);int scan=siteSurveys.getOrDefault(camp.id(),0);siteSurveys.put(camp.id(),scan+1);
+        var chunk=plots.get(Math.floorMod(scan/9,plots.size()));int offset=Math.floorMod(scan,9);
+        BlockPos center=new BlockPos(chunk.x()*16+5+(offset%3)*3,camp.y(),chunk.z()*16+5+(offset/3)*3);
         if((state.development().claimed(chunk)&&!town.claims.contains(chunk))||occupied(camp,town,chunk)||state.protectedAt(chunk)||!level.hasChunkAt(center)){town.obstacle="land";return;}
         if(!level.dimension().equals(net.minecraft.world.level.Level.NETHER))center=level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,center);
         if(Math.abs(center.getY()-camp.y())>8){town.obstacle="terrain";return;}
@@ -121,12 +127,20 @@ public final class EconomyController {
         for(int dx=-4;dx<=4;dx++)for(int dz=-4;dz<=4;dz++)if(!level.getBlockState(center.offset(dx,-1,dz)).isSolidRender()){town.obstacle="terrain";return;}
         if(town.claims.contains(chunk)||state.development().claim(camp.id(),chunk,state.protectedChunks())){town.project=new Project(objective,tiles);town.obstacle="materials";}
     }
+    public void recover(Mob mob,RealmSimulation.Camp camp,BlockPos home){
+        long now=mob.level().getGameTime();
+        if(mob.getHealth()<mob.getMaxHealth()*.5&&mob.distanceToSqr(home.getX()+.5,home.getY(),home.getZ()+.5)<16
+            &&now-meals.getOrDefault(mob.getUUID(),-100L)>=100&&state.consume(camp.id(),Map.of("minecraft:bread",1L))){
+            mob.heal(2);meals.put(mob.getUUID(),now);activities.put(mob.getUUID(),"recover");
+        }
+    }
     public boolean work(Mob mob,ServerLevel level,RealmSimulation.Camp camp){
         activities.put(mob.getUUID(),"idle");
         var town=state.development().town(camp.id());var person=state.development().person(mob.getUUID());
         if(combat(mob,level,camp,person))return true;
-        if(person.role==Role.TRADER&&travelTrade(mob,level,camp))return true;
-        if(person.role==Role.GUARD||person.role==Role.SOLDIER){equip(mob,camp.id());return false;}
+        boolean basicNeeds=ProductionNeeds.needsWorkers(state.population(camp.id()),town.count(Building.FARM),town.starvation);
+        if(!basicNeeds&&person.role==Role.TRADER&&travelTrade(mob,level,camp))return true;
+        if(!basicNeeds&&(person.role==Role.GUARD||person.role==Role.SOLDIER)){equip(mob,camp.id());return false;}
         if(town.project!=null && (person.role==Role.BUILDER||town.strategy==Strategy.EXPANSION)) {
             if(build(mob,level,camp,town))return true;
         }
@@ -186,7 +200,7 @@ public final class EconomyController {
         if(target!=null&&now-targetStarted.getOrDefault(mob.getUUID(),now)>200){targets.remove(mob.getUUID());target=null;}
         if(target==null){
             // A persistent column sweep covers surface resources despite terrain height changes.
-            // At most 16 columns × 8 blocks per update; no chunk loading and no random retries.
+            // At most 16 columns × 11 blocks per update; no chunk loading and no random retries.
             var candidates=new LinkedHashSet<ChunkKey>();
             for(var claim:town.claims){candidates.add(claim);for(int side=0;side<4;side++)candidates.add(new ChunkKey(claim.dimension(),claim.x()+(side==0?1:side==1?-1:0),claim.z()+(side==2?1:side==3?-1:0)));}
             var chunks=new ArrayList<>(candidates);chunks.sort(Comparator.comparingLong(c->Math.abs((long)c.x()-camp.territory().x())+Math.abs((long)c.z()-camp.territory().z())));
@@ -199,7 +213,7 @@ public final class EconomyController {
                 BlockPos surface=new BlockPos(x,camp.y(),z);
                 if(!level.hasChunkAt(surface)||Math.hypot(x-camp.x(),z-camp.z())<4)continue;
                 if(!level.dimension().equals(net.minecraft.world.level.Level.NETHER))surface=level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,surface);
-                for(int offset=-3;offset<=4;offset++){
+                for(int offset=-6;offset<=4;offset++){
                     var p=surface.offset(0,offset,0);
                     if(!level.getWorldBorder().isWithinBounds(p)||Math.abs(p.getY()-mob.getY())>8)continue;
                     if(drop(level.getBlockState(p).getBlock(),material)!=null&&(town.claims.contains(chunk)||state.development().claim(camp.id(),chunk,state.protectedChunks()))){target=p;scan++;break search;}
@@ -213,7 +227,9 @@ public final class EconomyController {
         activities.put(mob.getUUID(),"harvest");
         if(Math.hypot(mob.getX()-target.getX(),mob.getZ()-target.getZ())>3){if(!approach(mob,level,target)){targets.remove(mob.getUUID());town.obstacle="unreachable";}return true;}
         String item=drop(level.getBlockState(target).getBlock(),material);if(item==null)return false;
+        var harvested=level.getBlockState(target);
         if(level.setBlock(target,Blocks.AIR.defaultBlockState(),3)){
+            level.levelEvent(2001,target,Block.getId(harvested));
             // Account directly after successful extraction, not before removing the block.
             state.collect(controller.lease(mob.getUUID()),item,1,controller.profileFor(mob.getUUID()).carryingCapacity());state.development().person(mob.getUUID()).reward(2);town.labor=Math.min(1000000,town.labor+1);
             mob.swingForAttack(net.minecraft.world.InteractionHand.MAIN_HAND);
@@ -221,14 +237,14 @@ public final class EconomyController {
         targets.remove(mob.getUUID());return true;
     }
     /** Stand beside a resource/building instead of navigating into its solid block or roof. */
-    private boolean approach(Mob mob,ServerLevel level,BlockPos target){
+    public boolean approach(Mob mob,ServerLevel level,BlockPos target){
         if(!mob.getNavigation().isDone())return true;
         for(int i=0;i<8;i++){
             int dx=new int[]{-2,2,0,0,-2,-2,2,2}[i],dz=new int[]{0,0,-2,2,-2,2,-2,2}[i];
             BlockPos feet=new BlockPos(target.getX()+dx,mob.blockPosition().getY(),target.getZ()+dz);
             if(!level.hasChunkAt(feet))continue;
             if(!level.dimension().equals(net.minecraft.world.level.Level.NETHER))feet=level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,feet);
-            if(Math.abs(feet.getY()-mob.getY())>4||!level.isEmptyBlock(feet)||!level.isEmptyBlock(feet.above()))continue;
+            if(Math.abs(feet.getY()-mob.getY())>4||!level.getBlockState(feet).getCollisionShape(level,feet).isEmpty()||!level.getBlockState(feet.above()).getCollisionShape(level,feet.above()).isEmpty())continue;
             if(mob.getNavigation().moveTo(feet.getX()+.5,feet.getY(),feet.getZ()+.5,1))return true;
         }
         return false;
@@ -293,7 +309,7 @@ public final class EconomyController {
         if(!state.hasCitizen(mob.getUUID()))return;UUID camp=state.citizen(mob.getUUID()).camp();var town=state.development().town(camp);
         var damage=mob.getLastDamageSource();if(damage!=null){
             if(damage.getEntity() instanceof net.minecraft.server.level.ServerPlayer player){town.reputation(player.getUUID(),-25);state.development().nation(player.getUUID()).filter(n->!n.equals(camp)).ifPresent(n->state.development().relation(camp,n).adjust(-25));}if(damage.getDirectEntity() instanceof AbstractArrow)town.rangedHits++;else town.meleeHits++;}
-        targets.remove(mob.getUUID());targetStarted.remove(mob.getUUID());surveys.remove(mob.getUUID());activities.remove(mob.getUUID());attacks.remove(mob.getUUID());
+        targets.remove(mob.getUUID());targetStarted.remove(mob.getUUID());surveys.remove(mob.getUUID());activities.remove(mob.getUUID());attacks.remove(mob.getUUID());meals.remove(mob.getUUID());
     }
     private boolean travelTrade(Mob mob,ServerLevel level,RealmSimulation.Camp camp){
         for(var other:state.camps()){
@@ -319,7 +335,7 @@ public final class EconomyController {
                 relation.adjust(-10);if(relation.score<=-50)state.development().propose(id,other.id(),Treaty.WAR);else if(relation.score<=-20)relation.treaty=Treaty.HOSTILE;
             }
             if(relation.treaty==Treaty.NEUTRAL&&town.count(Building.MARKET)>0){relation.adjust(2);state.development().propose(id,other.id(),Treaty.TRADE);}
-            if(relation.lastTradeDay<state.day()&&state.residents(id).stream().noneMatch(c->c.mode()==RealmSimulation.Mode.DETAILED)){
+            if(relation.lastTradeDay<state.day()&&state.residents(id).stream().allMatch(c->c.mode()==RealmSimulation.Mode.ABSTRACT)){
                 if(!state.development().trade(state,id,other.id(),"minecraft:bread","minecraft:oak_planks",2))state.development().trade(state,id,other.id(),"minecraft:oak_planks","minecraft:cobblestone",2);
             }
             return;

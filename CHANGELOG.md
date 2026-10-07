@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.1-dev — Fair civilization work
+
+- Rotate detailed-AI slots fairly across settlements and residents; budget-paused residents retain cargo without abstract delivery.
+- Prevent skeleton equipment changes from restoring vanilla goals and enderman daylight teleports from interrupting jobs; wild mobs remain vanilla.
+- Survey nine candidate building positions per chunk, include deeper shallow resources, allow collision-free vegetation in approach paths and deliver at the central camp depot.
+- Small/hungry settlements recall guards/traders for basic work; injured residents can recover using stored bread. Resource extraction emits block-break effects for all species.
+- Expose loaded/active/waiting worker states and actual saved AI/population limits in the GUI. No forced chunk loading or invented remote resources.
+
 ## 0.6.0-dev — Resident identities and social ranks
 
 - Persist world-unique resident names and leadership in save format 4, migrating formats 1–3. Names survive recruitment/restarts and are not reused after deaths.

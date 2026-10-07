@@ -6,6 +6,8 @@ import java.util.Map;
 /** Outstanding construction demand, excluding already funded abstract work. */
 public final class ProductionNeeds {
     private ProductionNeeds() {}
+    /** Innate survival rules, independent of species and learned strategy weights. */
+    public static boolean needsWorkers(int population,int farms,int starvation){return population<8||farms==0||starvation>0;}
     public static String next(Development.Project project, Map<String,Long> stock) {
         Map<String,Long> needed = new LinkedHashMap<>();
         if (project != null) {

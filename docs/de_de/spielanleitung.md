@@ -1,8 +1,8 @@
-# Mob Realms spielen — 0.6.0-dev
+# Mob Realms spielen — 0.6.1-dev
 
 ## Installation und Einstieg
 
-Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.0-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
+Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.1-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
 
 Beginne in einer Testwelt auf Normal. `/realm` öffnet den Reichsatlas. Er zeigt einen Server-Schnappschuss; **Aktualisieren** lädt aktuelle Werte. Gold markiert die gewählte Siedlung, Türkis aktive Entwicklung. Übersicht und Forschung lassen sich mit dem Mausrad scrollen. Die Karte zeigt beanspruchte Chunks der aktuellen Siedlungsseite und Dimension, keine Landschaft.
 
@@ -76,7 +76,7 @@ Die Konfiguration unter `config/mobrealms.properties` enthält Wachstumsdauer, A
 
 Teste zuerst in einer Kopie deiner Welt: Lager bei Wald und ebener Freifläche gründen, Vorräte spenden, Bau bis Feld und Haus beobachten, 30 Tage simulieren, Rollen und Handel prüfen, speichern/neustarten und Baufortschritt vergleichen. Prüfe mit zwei Spielern, dass Verträge Zustimmung benötigen und fremde Rollen nicht geändert werden können. Teste UI bei verschiedenen GUI-Skalierungen und Zeitraffer anschließend wieder auf 1× zurücksetzen.
 
-0.6.0-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
+0.6.1-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
 
 Speicherformat 4 liest alte Formate 1/2/3. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.
 
@@ -114,3 +114,17 @@ Gesellschaftlicher Rang, Beruf und Veteranenstufe sind getrennt. Der Rang richte
 Der erste Bewohner übernimmt die Führung, ohne seinen Beruf aufzugeben. Beim Tod oder Wegzug folgt deterministisch ein verbliebener Bewohner; die Führung wird gespeichert. In deiner Nation ernennt die Rollenwahl **Anführer** den gewählten Bewohner zum neuen Oberhaupt. Führungsränge sind hier Titel und Mitgliedschaft, keine fertige Erbfolge- oder Bürgerkriegsmechanik. Bei Bevölkerungsverlusten können Entwicklungsstand und Titel zurückgehen. Namen und aktuelle Ränge stehen am Mob und im Bewohner-Tab; Tooltips zeigen zusätzlich Beruf, Veteranenstufe und UUID.
 
 Speicherformat 4 migriert Formate 1–3 automatisch. Vor dem Update ein Backup anlegen; alte Modstände können Format 4 nicht lesen. Teste nach dem Update Namen, Anwerben, Rangwechsel durch Wachstum und Tod des Oberhaupts sowie einen Neustart.
+
+## Wenn nur einzelne Siedlungen arbeiten (0.6.1)
+
+Es gibt kein Limit von einer arbeitenden Siedlung. Standardmäßig gelten acht Siedlungen, 1000 Bewohner insgesamt und **100 detaillierte KI-Plätze für die gesamte Welt**. Das Bauplanungsziel beträgt 96 Bewohner je Siedlung. Globale Limits sind im Spielstand gespeichert; eine Änderung der Konfigurationsdatei ersetzt sie in bestehenden Welten nicht. Das Admin-GUI zeigt die tatsächlich gespeicherten Werte.
+
+Die Plätze rotieren jetzt alle zehn Sekunden fair zwischen geladenen Siedlungen und Bewohnern. Bei einem kleineren Budget als der Siedlungszahl kommen die übrigen Siedlungen im nächsten Zeitfenster dran. Pausierte Bewohner zeigen „Wartet auf rotierenden KI-Platz“; ihre Fracht bleibt bei ihnen. Entladene Bewohner zeigen ausdrücklich „abstrakte Simulation“. In der Übersicht stehen aktive und geladene Bewohner nebeneinander.
+
+Rohstoffsuche, Verarbeitung, Lieferung und Bauen sind feste Grundfähigkeiten und werden nicht erst erlernt. Kleine Siedlungen ohne stabile Versorgung setzen auch Wachen/Händler als Arbeiter ein. Stark verletzte Bewohner können in Heimnähe alle fünf Sekunden ein gelagertes Brot für zwei Lebenspunkte verbrauchen, bis sie mindestens die halbe Gesundheit erreicht haben. Nahrung wird dabei wirklich abgezogen. Skelette und Zombies bleiben wegen Sonnenbrand tagsüber vorsichtig; im Nether wird ihnen kein fiktiver Sonnenschutz aufgezwungen.
+
+Nur Zivilisationsbewohner erhalten die Mod-Arbeitssteuerung. Vanilla-Ziele werden bei Übernahme entfernt. Spezielle Eingriffe verhindern, dass Skelette beim Ausrüsten Ziele erneut eintragen, Piglin-Brains parallel steuern oder Endermen bei Tageslicht von der Arbeit wegteleportieren. Schadensreaktionen und Pathfinding bleiben grundsätzlich Minecraft-Mechanik. Creeper brauchen keine sichtbaren Hände, um den gemeinsamen Abbauauftrag auszuführen; Blockpartikel und Lagerbestand machen Abbau erkennbar.
+
+Ein unbeladener Lager-Chunk verhindert neue Weltaktionen. Bereits vorhandene Farmen und bekannte, finanzierbare Projekte können abstrakt weiterlaufen, aber es gibt kein Erkunden unbekannten Geländes und kein Erz aus dem Nichts. Andere Gründe bleiben fehlende Rohstoffe, Schutzgebiete, unpassierbare Wege und ungeeignetes Gelände. Die Bauplatzsuche probiert jetzt neun Positionen je Chunk statt nur dessen Mitte; sie planiert keine Hügel automatisch.
+
+Zum Prüfen acht Lager im geladenen Bereich aufstellen, Tag und Nacht beobachten und aktive KI-Zahlen vergleichen. Nach Ausrüstungswechsel eines Skeletts weiter Rohstoffsuche prüfen; Endermen sollen nicht durch Tageslicht verschwinden. Bei entladenen Lagern den expliziten Status erwarten. Diese Welt-/Wegfindungstests sind trotz erfolgreichem Build noch manuell durchzuführen.

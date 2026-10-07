@@ -1,6 +1,6 @@
-# Playing Mob Realms — 0.6.0-dev
+# Playing Mob Realms — 0.6.1-dev
 
-Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.0-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
+Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.1-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
 
 ## Settlements
 
@@ -71,3 +71,17 @@ Social rank is separate from job and veteran level. At 200 experience the reside
 The first resident leads without losing their job. Death or recruitment away selects a remaining successor deterministically; leadership persists. Assigning Leader in your nation appoints that resident. This is basic leadership membership, not a full succession/civil-war system. Names and ranks appear on mobs and in Residents; tooltips include job, veteran level and UUID.
 
 Save format 4 migrates formats 1–3. Back up before updating; older builds cannot read format 4. Acceptance: compare identities across recruitment and restart, advance settlement stages, and kill the leader to check succession.
+
+## Uneven settlement activity (0.6.1)
+
+There is no one-active-settlement limit. Defaults are eight settlements, 1000 total residents and **100 detailed AI slots shared by the entire world**. The per-settlement construction target is 96. Global limits persist in the save; changing config does not replace them in existing worlds. Admin UI shows the actual saved values.
+
+Detailed slots now rotate every ten seconds across settlements and residents. With fewer slots than settlements, remaining towns receive later windows. Budget-paused residents keep their cargo and display a waiting status; unloaded residents explicitly display abstract simulation. Overview shows active and loaded worker counts.
+
+Gathering, processing, delivering and building are innate rules, not learned skills. Small/unfed settlements recall guards/traders to basic labor. Injured residents near home can consume one stored bread per five seconds to recover two health points until half health. Zombies/skeletons still avoid dangerous daylight, but Nether residents no longer shelter from nonexistent sunlight.
+
+Realm members relinquish vanilla goals. Targeted hooks prevent skeleton equipment changes from reinserting goals, piglin brains from competing, and endermen from abandoning jobs through daylight teleportation. Wild mobs are unchanged. Vanilla pathfinding and damage reactions remain. Creepers use the shared harvesting executor even without rendered hands; block-break effects and inventory show extraction.
+
+Unloaded camp chunks prevent new world actions. Existing farms and known funded projects can progress abstractly; unexplored terrain does not yield invented resources. Other blockers include missing resources, protected land, inaccessible paths and terrain. Construction now surveys nine positions per chunk, without automatically leveling hills.
+
+Manual acceptance: compare eight loaded settlements across day/night, observe AI allocations, equip a skeleton and check continued work, observe enderman daylight behavior, then unload camps and verify status. Compilation/tests do not replace this gameplay check.

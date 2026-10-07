@@ -158,7 +158,7 @@ public final class RealmScreen extends Screen {
         else if(tab==5){
             boolean halted=data.has("healthy")&&!data.get("healthy").getAsBoolean();
             text(g,halted?tr("halted"):tr(adminPage==2?"log_status":"admin_status",adminPage==2?logPage+1:number(data,"queued")),mainX,top+101,halted?0xffef8585:TEAL);
-            if(adminPage==0&&panelH>275)text(g,tr("settlement_target",number(data,"settlementTarget")),mainX,top+246,GOLD);
+            if(adminPage==0&&panelH>275){text(g,tr("settlement_target",number(data,"settlementTarget")),mainX,top+246,GOLD);text(g,tr("ai_limits",number(data,"maxDetailed"),number(data,"maxPopulation")),mainX,top+264,MUTED);}
             if(adminPage!=2)g.textWithWordWrap(font,tr(adminPage==0?"admin_help":"world_help"),mainX,top+199,mainW,MUTED);
         }
         else if(!data.has("detail"))g.textWithWordWrap(font,tr("empty"),mainX,top+84,mainW,PAPER);
@@ -179,7 +179,7 @@ public final class RealmScreen extends Screen {
         text(g,tr("vital",number(d,"births"),number(d,"losses")),mainX,top+113,MUTED);
         text(g,name("growth",str(d,"growth")),mainX,top+132,TEAL);
         text(g,tr("growth_days",number(d,"foodDays"),number(d,"growthDays")),mainX,top+151,PAPER);
-        text(g,tr("pending_births",number(d,"pendingBirths")),mainX,top+170,MUTED);
+        text(g,tr("workers",number(d,"activeWorkers"),number(d,"loadedWorkers"),number(d,"pendingBirths")),mainX,top+170,MUTED);
         rule(g,top+185);
         text(g,tr("objective",name("building",str(d,"objective"))),mainX,top+195,TEAL);
         int progress=number(d,"progress"),total=Math.max(1,number(d,"total"));

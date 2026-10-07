@@ -150,7 +150,7 @@ public final class Development {
         Town town = town(id); if (town.lastDay >= state.day()) return;
         town.lastDay = state.day(); int population = state.population(id);
         if(population==0){town.obstacle="abandoned";return;}
-        if(town.project!=null&&state.residents(id).stream().noneMatch(c->c.mode()==RealmSimulation.Mode.DETAILED)){
+        if(town.project!=null&&state.residents(id).stream().allMatch(c->c.mode()==RealmSimulation.Mode.ABSTRACT)){
             Project p=town.project;
             for(int i=0;i<Math.min(32,population*4)&&p.paid<p.tiles.size();i++){
                 Tile tile=p.tiles.get(p.paid);if(state.protectedAt(ChunkKey.fromBlock(state.camp(id).territory().dimension(),tile.x(),tile.z())))break;if(!tile.material().equals("minecraft:air")&&!state.consume(id,Map.of(tile.material(),1L)))break;p.paid++;town.labor++;
