@@ -37,6 +37,7 @@ public final class DevelopmentTests {
     private static void diplomacy(){
         var s=fixture();s.development().town(B).owner=P;var r=s.development().relation(A,B);r.adjust(100);check(s.development().propose(A,B,Treaty.VASSAL),"offer failed");check(r.treaty==Treaty.NEUTRAL&&r.offer==Treaty.VASSAL,"player treaty accepted without consent");
         check(s.development().answer(B,A,true,0)&&r.overlord.equals(A),"vassal direction wrong");s.development().propose(B,A,Treaty.WAR);check(r.treaty==Treaty.WAR&&r.overlord==null,"war failed to end vassalage");
+        s.development().propose(A,B,Treaty.ALLIANCE);s.development().propose(B,A,Treaty.WAR);check(!s.development().answer(B,A,true,0)&&r.treaty==Treaty.WAR,"stale offer ended war");
         var claim=new ChunkKey("minecraft:overworld",1,0);check(!s.development().claim(A,claim,Set.of(claim)),"protected expansion");check(s.development().claim(A,claim,Set.of()),"contiguous expansion failed");check(!s.development().claim(B,claim,Set.of()),"overlapping territory");
     }
     private static void learning(){

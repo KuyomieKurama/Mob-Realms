@@ -96,7 +96,7 @@ public final class EconomyController {
         if(!level.dimension().equals(net.minecraft.world.level.Level.NETHER))center=level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,center);
         if(Math.abs(center.getY()-camp.y())>8){town.obstacle="terrain";return;}
         var tiles=blueprints.at(objective,center.getX(),center.getY(),center.getZ(),camp.species());
-        for(var t:tiles){BlockPos p=new BlockPos(t.x(),t.y(),t.z());if(!level.hasChunkAt(p)||!level.getWorldBorder().isWithinBounds(p)||!level.isEmptyBlock(p)){town.obstacle="terrain";return;}}
+        for(var t:tiles){BlockPos p=new BlockPos(t.x(),t.y(),t.z());if(!level.hasChunkAt(p)||!level.getWorldBorder().isWithinBounds(p)||(!level.isEmptyBlock(p)&&!level.getBlockState(p).canBeReplaced())){town.obstacle="terrain";return;}}
         for(int dx=-4;dx<=4;dx++)for(int dz=-4;dz<=4;dz++)if(!level.getBlockState(center.offset(dx,-1,dz)).isSolidRender()){town.obstacle="terrain";return;}
         if(town.claims.contains(chunk)||state.development().claim(camp.id(),chunk,state.protectedChunks())){town.project=new Project(objective,tiles);town.obstacle="materials";}
     }
@@ -133,7 +133,7 @@ public final class EconomyController {
         if(!level.hasChunkAt(pos)||state.protectedAt(ChunkKey.fromBlock(RealmController.dimension(level),tile.x(),tile.z()))){town.obstacle="protected";return false;}
         var block=BuiltInRegistries.BLOCK.getValue(Identifier.parse(tile.block()));
         if(level.getBlockState(pos).is(block)){project.progress++;project.paid=Math.max(project.paid,project.progress);return true;}
-        if(!level.isEmptyBlock(pos)){town.obstacle="blocked";return false;}
+        if(!level.isEmptyBlock(pos)&&!level.getBlockState(pos).canBeReplaced()){town.obstacle="blocked";return false;}
         if(project.progress>=project.paid&&!tile.material().equals("minecraft:air")&&state.stock(camp.id()).getOrDefault(tile.material(),0L)<1){town.obstacle="materials";return false;}
         // Approach the footprint edge; builders can reach the roof from their scaffold radius.
         if(mob!=null&&Math.hypot(mob.getX()-tile.x(),mob.getZ()-tile.z())>5){mob.getNavigation().moveTo(tile.x()+.5,project.tiles.get(0).y()+1,tile.z()+.5,1);activities.put(mob.getUUID(),"build");return true;}

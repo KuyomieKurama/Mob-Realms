@@ -71,6 +71,7 @@ public final class RealmController {
         try {
             SpeciesDefinitions next = new SpeciesDefinitions(); next.reload(server.getResourceManager());
             for (var camp : state.camps()) next.get(camp.species());
+            for (var citizen : state.citizens()) next.get(state.development().person(citizen.id()).species);
             definitions.reload(server.getResourceManager());
         } catch (Exception ex) { MobRealms.LOGGER.error("Keeping previous species definitions after invalid reload", ex); }
     }

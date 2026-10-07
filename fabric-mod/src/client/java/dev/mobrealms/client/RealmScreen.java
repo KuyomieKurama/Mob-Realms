@@ -44,6 +44,11 @@ public final class RealmScreen extends Screen {
         button(left+panelW-57,top+12,45,"close",this::onClose,false);
         if(str(data,"selected").isEmpty())return;
         int y=top+panelH-60;String id=str(data,"selected");
+        if(confirm!=null){
+            String pending=confirm;
+            button(mainX,top+114,mainW,"confirm",()->{if(pending.equals("speed"))send("civ speed 5");else action("treaty "+id+" "+pending);confirm=null;rebuildWidgets();},true);
+            button(mainX,top+139,mainW,"close",()->{confirm=null;rebuildWidgets();},false);return;
+        }
         if(tab==0){
             button(mainX,y,Math.min(140,mainW/2-4),"donate",()->action("donate "+id),false);
             if(str(data,"own").equals(id))button(mainX+mainW/2,y,mainW/2,"claim",()->action("claim "+id),false);
@@ -76,7 +81,7 @@ public final class RealmScreen extends Screen {
             button(mainX,y,80,"prev",()->{peoplePage=Math.max(0,peoplePage-1);rebuildWidgets();},false);
             button(mainX+85,y,80,"next",()->{peoplePage++;rebuildWidgets();},false);
         }
-        if(confirm!=null){String pending=confirm;button(mainX,top+panelH-87,mainW,"confirm",()->{if(pending.equals("speed"))send("civ speed 5");else action("treaty "+id+" "+pending);confirm=null;rebuildWidgets();},true);}
+
     }
     private void text(GuiGraphicsExtractor g,Component value,int x,int y,int color){g.text(font,font.plainSubstrByWidth(value.getString(),mainW),x,y,color,false);}
     private void rule(GuiGraphicsExtractor g,int y){g.fill(mainX,y,mainX+mainW,y+1,0xff34434d);}
@@ -88,8 +93,9 @@ public final class RealmScreen extends Screen {
         g.text(font,tr("day",number(data,"day"),number(data,"queued")),mainX,top+18,MUTED,false);
         var d=detail();
         g.enableScissor(mainX,top+64,mainX+mainW,top+panelH-66);
-        if(tab==0||tab==4){g.pose().pushMatrix();g.pose().translate(0,-scroll);}
-        if(!data.has("detail"))g.textWithWordWrap(font,tr("empty"),mainX,top+84,mainW,PAPER);
+        if(confirm==null&&(tab==0||tab==4)){g.pose().pushMatrix();g.pose().translate(0,-scroll);}
+        if(confirm!=null)g.textWithWordWrap(font,tr("confirm_"+confirm),mainX,top+76,mainW,GOLD);
+        else if(!data.has("detail"))g.textWithWordWrap(font,tr("empty"),mainX,top+84,mainW,PAPER);
         else switch(tab){
             case 0->overview(g,d);
             case 1->map(g);
@@ -97,9 +103,8 @@ public final class RealmScreen extends Screen {
             case 3->people(g,d);
             case 4->research(g,d);
         }
-        if(tab==0||tab==4)g.pose().popMatrix();
+        if(confirm==null&&(tab==0||tab==4))g.pose().popMatrix();
         g.disableScissor();
-        if(confirm!=null)text(g,tr("confirm_"+confirm),mainX,top+panelH-102,GOLD);
         super.extractRenderState(g,mx,my,delta);
     }
     private void overview(GuiGraphicsExtractor g,JsonObject d){

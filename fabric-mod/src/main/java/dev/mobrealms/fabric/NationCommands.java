@@ -17,6 +17,7 @@ import java.util.*;
 public final class NationCommands {
     private static final Map<UUID,Long> lastAction=new HashMap<>();
     private NationCommands(){}
+    public static void clearSession(){lastAction.clear();}
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher){
         dispatcher.register(Commands.literal("realm")
             .executes(ctx->RealmDashboard.open(ctx.getSource(),MobRealms.controller(ctx.getSource().getServer()),null,0))

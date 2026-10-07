@@ -58,7 +58,7 @@ public final class MobRealms implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             var c = controllers.get(server); if (c != null) c.save();
         });
-        ServerLifecycleEvents.SERVER_STOPPED.register(controllers::remove);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server->{controllers.remove(server);NationCommands.clearSession();});
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, manager, success) -> {
             var c = controllers.get(server); if (success && c != null) c.reloadDefinitions();
         });
