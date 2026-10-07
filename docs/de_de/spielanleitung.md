@@ -1,8 +1,8 @@
-# Mob Realms spielen — 0.5.0-dev
+# Mob Realms spielen — 0.6.0-dev
 
 ## Installation und Einstieg
 
-Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.5.0-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
+Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.0-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
 
 Beginne in einer Testwelt auf Normal. `/realm` öffnet den Reichsatlas. Er zeigt einen Server-Schnappschuss; **Aktualisieren** lädt aktuelle Werte. Gold markiert die gewählte Siedlung, Türkis aktive Entwicklung. Übersicht und Forschung lassen sich mit dem Mausrad scrollen. Die Karte zeigt beanspruchte Chunks der aktuellen Siedlungsseite und Dimension, keine Landschaft.
 
@@ -76,9 +76,9 @@ Die Konfiguration unter `config/mobrealms.properties` enthält Wachstumsdauer, A
 
 Teste zuerst in einer Kopie deiner Welt: Lager bei Wald und ebener Freifläche gründen, Vorräte spenden, Bau bis Feld und Haus beobachten, 30 Tage simulieren, Rollen und Handel prüfen, speichern/neustarten und Baufortschritt vergleichen. Prüfe mit zwei Spielern, dass Verträge Zustimmung benötigen und fremde Rollen nicht geändert werden können. Teste UI bei verschiedenen GUI-Skalierungen und Zeitraffer anschließend wieder auf 1× zurücksetzen.
 
-0.5.0-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
+0.6.0-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
 
-Speicherformat 3 liest alte Formate 1/2. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.
+Speicherformat 4 liest alte Formate 1/2/3. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.
 
 ## Bevölkerungsverluste und Admin-Ansicht
 
@@ -97,3 +97,20 @@ Unter `/civ admin` → **Protokoll** stehen die letzten 256 gespeicherten Simula
 Erfasst werden Gründungen, Gebäudefertigstellung, Geburten, Todesfälle, Technologien, explizite Diplomatieaktionen und wechselnde Engpässe. Engpässe werden höchstens einmal je zehn Sekunden und Siedlung aufgezeichnet, nicht bei jedem KI-Tick. Es handelt sich um ein begrenztes Simulationsprotokoll; vollständige Java-Fehler, Stacktraces und Meldungen anderer Mods stehen weiterhin in `logs/latest.log`.
 
 Das Standard-Wachstumsziel beträgt jetzt **96 statt 48 Bewohner**. Mit `settlementTargetPopulation=96` in `config/mobrealms.properties` lässt es sich zwischen 3 und 256 einstellen. Fehlt die neue Zeile in einer bestehenden Konfiguration, gilt ebenfalls 96. Änderung per Serverneustart übernehmen. Auch bestehende Siedlungen können dann weiterbauen. Das ist das Ziel der Bauplanung, keine sofortige Bevölkerungsauffüllung oder starre Geburtenobergrenze. Nahrung, Wohnraum, 64 Gebiets-Chunks und globale gespeicherte Bevölkerungslimits gelten weiter; Startlager behalten drei Bewohner.
+
+## Namen und gesellschaftliche Ränge
+
+Alle Zivilisationsbewohner erhalten einen weltweit eindeutigen, gespeicherten Vor- und Familiennamen. Namen bleiben bei Rollenwechsel, Anwerben und Neustart erhalten; Namen verstorbener Bewohner werden nicht neu vergeben. Die ersten 4096 Kombinationen sind reine Namen, danach ergänzt ein fortlaufender Namenszyklus eine Nummer. Bestehende Bewohner erhalten beim Laden älterer Spielstände automatisch Namen. Die Mod verwaltet das Namensschild ihrer Bewohner; manuelle Namensschild-Änderungen werden durch die gespeicherte Identität ersetzt. Wilde Mobs bleiben unberührt.
+
+Gesellschaftlicher Rang, Beruf und Veteranenstufe sind getrennt. Der Rang richtet sich nach Entwicklungsstand und ab 200 Erfahrung nach einer höheren Erfahrungsstufe:
+
+| Stand | Zivile Ränge | Militärische Ränge | Führung |
+|---|---|---|---|
+| Lager | Neuling → Pionier | Rekrut → Veteran | Häuptling |
+| Dorf (ab 8 Bewohnern) | Dorfbewohner → Freisasse | Milizionär → Unteroffizier | Dorfältester |
+| Stadt (ab 24 + Markt) | Bürger → Meister | Stadtgardist → Hauptmann | Statthalter |
+| Reich (ab 64 + Markt + 3 Technologien) | Reichsbewohner → Patrizier | Legionär → Kommandant | Herrscher |
+
+Der erste Bewohner übernimmt die Führung, ohne seinen Beruf aufzugeben. Beim Tod oder Wegzug folgt deterministisch ein verbliebener Bewohner; die Führung wird gespeichert. In deiner Nation ernennt die Rollenwahl **Anführer** den gewählten Bewohner zum neuen Oberhaupt. Führungsränge sind hier Titel und Mitgliedschaft, keine fertige Erbfolge- oder Bürgerkriegsmechanik. Bei Bevölkerungsverlusten können Entwicklungsstand und Titel zurückgehen. Namen und aktuelle Ränge stehen am Mob und im Bewohner-Tab; Tooltips zeigen zusätzlich Beruf, Veteranenstufe und UUID.
+
+Speicherformat 4 migriert Formate 1–3 automatisch. Vor dem Update ein Backup anlegen; alte Modstände können Format 4 nicht lesen. Teste nach dem Update Namen, Anwerben, Rangwechsel durch Wachstum und Tod des Oberhaupts sowie einen Neustart.

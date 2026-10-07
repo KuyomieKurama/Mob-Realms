@@ -13,8 +13,35 @@ public final class DevelopmentTests {
     private static void check(boolean c,String why){if(!c)throw new AssertionError(why);}
     private static void next(RealmSimulation s){s.advanceDay();s.development().daily(s,A,.2,1,2);}
     public static void main(String[] args)throws Exception{
-        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();
-        System.out.println("Passed 10 civilization scenarios.");
+        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();identities();socialRanks();legacyNames();
+        System.out.println("Passed 13 civilization scenarios.");
+    }
+    private static void identities()throws Exception{
+        Set<String> names=new HashSet<>();for(long i=1;i<=100000;i++)check(names.add(ResidentNames.fromSequence(i)),"duplicate generated identity");
+        var s=fixture();UUID id=new UUID(0,10);String original=s.development().person(id).name;
+        s.recruit(id,B);check(s.development().person(id).name.equals(original),"recruit renamed resident");
+        check(!id.equals(s.development().town(A).leader)&&id.equals(s.development().town(B).leader),"leadership did not transfer safely");
+        var copy=RealmStore.decode(RealmStore.encode(s));check(copy.development().person(id).name.equals(original)&&copy.development().town(B).leader.equals(id),"name/leader lost on restart");
+        Set<String> old=new HashSet<>();for(var c:copy.citizens())old.add(copy.development().person(c.id()).name);
+        copy.recordDeath(id);var restarted=RealmStore.decode(RealmStore.encode(copy));UUID child=new UUID(0,999);restarted.addCitizen(child,A,.5);check(!old.contains(restarted.development().person(child).name),"dead resident name reused");
+    }
+    private static void socialRanks(){
+        var s=fixture();UUID worker=new UUID(0,11);var p=s.development().person(worker);var t=s.development().town(A);
+        check(s.development().socialRank(new UUID(0,10),s).equals("camp_leader"),"founder has no leadership title");
+        check(s.development().socialRank(worker,s).equals("camp_civilian_junior"),"wrong camp rank");p.reward(200);
+        for(int i=3;i<8;i++)s.addCitizen(new UUID(0,10+i),A,.5);
+        check(s.development().socialRank(worker,s).equals("village_civilian_senior"),"village promotion missing");p.role=Role.SOLDIER;
+        for(int i=8;i<64;i++)s.addCitizen(new UUID(0,10+i),A,.5);t.buildings.put(Building.MARKET,1);
+        check(s.development().socialRank(worker,s).equals("city_military_senior"),"city military promotion missing");
+        t.technologies.addAll(EnumSet.of(Technology.AGRICULTURE,Technology.MASONRY,Technology.SHIELDS));check(s.development().socialRank(worker,s).equals("realm_military_senior"),"realm rank missing");
+        s.recordDeath(new UUID(0,10));check(t.leader!=null&&t.leader.equals(worker),"leadership not replaced after death");
+        check(s.development().socialRank(worker,s).equals("city_leader"),"rank did not reflect succession/population decline");
+    }
+    private static void legacyNames()throws Exception{
+        byte[] old=Base64.getDecoder().decode("TVJMTQAAAAMAAAAIAAAD6AAAAGQAAAAAAAAAAP//////////AAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAPbW9icmVhbG1zOmh1bWFuABNtaW5lY3JhZnQ6b3ZlcndvcmxkAAAACAAAAEAAAAAIAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAP+AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAABABNtaW5lY3JhZnQ6b3ZlcndvcmxkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAClBST1NQRVJJVFkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////////AAAAAAAAAAAABnN1cnZleQAAAAABAAAAAAAAAAAAAAAAAAAACgAPbW9icmVhbG1zOmh1bWFuAAhHQVRIRVJFUgAAAOkAAAAAAAAAAAAAAAAAcAB8xA==");
+        var migrated=RealmStore.decode(old);var person=migrated.development().person(new UUID(0,10));
+        check(!person.name.isBlank()&&person.experience==233,"format-3 migration lost experience/name");
+        var copy=RealmStore.decode(RealmStore.encode(migrated));check(copy.development().person(new UUID(0,10)).name.equals(person.name),"migrated name changed on restart");
     }
     private static void eventLog()throws Exception{
         var s=fixture();for(int i=0;i<300;i++)s.development().event("growth",A,i);

@@ -54,7 +54,7 @@ public final class NationCommands {
                 case "accept","decline"->{if(own!=null)ok=s.development().answer(own,target,args[0].equals("accept"),s.day());}
                 case "barter"->{if(own!=null)ok=s.development().trade(s,own,target,"minecraft:oak_planks","minecraft:cobblestone",4);}
                 case "claim"->{if(own!=null&&own.equals(target)){var p=player.blockPosition();var chunk=ChunkKey.fromBlock(RealmController.dimension(player.level()),p.getX(),p.getZ());if(s.development().claim(own,chunk,s.protectedChunks()))ok=true;}}
-                case "role"->{if(args.length==3&&s.hasCitizen(target)){var citizen=s.citizen(target);if(player.getUUID().equals(s.development().town(citizen.camp()).owner)){s.development().person(target).role=Role.valueOf(args[2].toUpperCase(Locale.ROOT));show=citizen.camp();ok=true;}}}
+                case "role"->{if(args.length==3&&s.hasCitizen(target)){var citizen=s.citizen(target);if(player.getUUID().equals(s.development().town(citizen.camp()).owner)){s.development().person(target).role=Role.valueOf(args[2].toUpperCase(Locale.ROOT));if(s.development().person(target).role==Role.LEADER)s.development().town(citizen.camp()).leader=target;show=citizen.camp();ok=true;}}}
                 case "recruit"->{if(own!=null&&s.hasCitizen(target)){var citizen=s.citizen(target);var town=s.development().town(citizen.camp());var mob=player.level().getEntity(target);
                     if(!own.equals(citizen.camp())&&town.owner==null&&mob!=null&&mob.distanceToSqr(player)<=256&&s.population(own)<s.development().town(own).housing()
                         &&(town.reputation.getOrDefault(player.getUUID(),0)>=20||town.starvation>=2)&&pay(player,Items.EMERALD,8)){

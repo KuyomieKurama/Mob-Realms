@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0-dev — Resident identities and social ranks
+
+- Persist world-unique resident names and leadership in save format 4, migrating formats 1–3. Names survive recruitment/restarts and are not reused after deaths.
+- Social ranks adapt to settlement stage, civilian/military work and experience; leadership titles progress from chieftain to sovereign. Show identities on mobs and in resident tooltips.
+
 ## 0.5.0-dev — M2–M4 development candidate
 
 - Admin-only paginated simulation log with latest-first ordering, settlement filter and persisted 256-entry history. Rate-limited bottleneck events aid debugging.

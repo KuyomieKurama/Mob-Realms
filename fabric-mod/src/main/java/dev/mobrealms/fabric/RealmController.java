@@ -79,13 +79,19 @@ public final class RealmController {
         if (!(entity instanceof Mob mob) || !state.hasCitizen(entity.getUUID()) || loaded.containsKey(entity.getUUID())) return;
         if(mob.isDeadOrDying()){died(mob);return;}
         loaded.put(mob.getUUID(), mob);
-        if(mob instanceof SettlerEntity&&!mob.hasCustomName())mob.setCustomName(Component.translatable("name.mobrealms."+Math.floorMod(mob.getUUID().hashCode(),12)));
+        updateIdentity(mob);
         var access = (MobGoalsAccess) mob;
         access.mobrealms$goals().removeAllGoals(g -> true);
         access.mobrealms$targets().removeAllGoals(g -> true);
         access.mobrealms$goals().addGoal(0, new FloatGoal(mob));
         mob.setTarget(null); mob.setPersistenceRequired(); mob.setCanPickUpLoot(false);
         activate(mob);
+    }
+    private void updateIdentity(Mob mob){
+        var p=state.development().person(mob.getUUID());
+        var title=Component.translatable("rank.mobrealms."+state.development().socialRank(mob.getUUID(),state));
+        var label=Component.translatable("entity.mobrealms.named",Component.literal(p.name),title);
+        if(!label.equals(mob.getCustomName()))mob.setCustomName(label);
     }
     private void activate(Mob mob) {
         if (leases.containsKey(mob.getUUID())) return;
@@ -157,6 +163,7 @@ public final class RealmController {
         scheduler.run(config.budgetNanos(), config.workPerTick());
     }
     private void update(Mob mob) {
+        updateIdentity(mob);
         economy.clearActivity(mob.getUUID());
         var citizen = state.citizen(mob.getUUID()); var camp = state.camp(citizen.camp());
         ServerLevel level = (ServerLevel) mob.level();

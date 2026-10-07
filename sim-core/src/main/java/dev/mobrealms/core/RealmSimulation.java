@@ -51,7 +51,10 @@ public final class RealmSimulation {
         recipe.forEach(stock::take); return true;
     }
     public void recruit(UUID citizen, UUID destination) {
-        camp(destination); Citizen c = required(citizen); deliver(c); residents.get(c.camp).remove(citizen); c.camp = destination; residents.get(destination).add(citizen);
+        camp(destination); Citizen c = required(citizen); deliver(c); UUID source=c.camp;
+        residents.get(source).remove(citizen);c.camp=destination;residents.get(destination).add(citizen);
+        if(citizen.equals(development.town(source).leader))development.town(source).leader=residents.get(source).stream().min(UUID::compareTo).orElse(null);
+        if(development.town(destination).leader==null)development.town(destination).leader=citizen;
     }
     private long day;
     private long observedWorldDay = -1;
@@ -131,7 +134,7 @@ public final class RealmSimulation {
     public void addCitizen(UUID id, UUID camp, double diligence) {
         camp(camp);
         if (citizens.size() >= maxPopulation || citizens.containsKey(id)) throw new IllegalStateException("Citizen conflict/limit");
-        citizens.put(id, new Citizen(id, camp, diligence)); residents.get(camp).add(id); development.person(id).species=camp(camp).species();
+        citizens.put(id, new Citizen(id, camp, diligence)); residents.get(camp).add(id); development.person(id).species=camp(camp).species(); development.nameResident(id); if(development.town(camp).leader==null)development.town(camp).leader=id;
     }
     public Lease activate(UUID id) {
         Citizen c = required(id);
@@ -169,7 +172,10 @@ public final class RealmSimulation {
         day = next;
     }
     /** Death destroys undelivered cargo; it must not also be dropped by the adapter. */
-    public void removeCitizen(UUID id) { residents.get(required(id).camp).remove(id); citizens.remove(id); development.removePerson(id); }
+    public void removeCitizen(UUID id) {
+        UUID camp=required(id).camp;residents.get(camp).remove(id);citizens.remove(id);development.removePerson(id);
+        if(id.equals(development.town(camp).leader))development.town(camp).leader=residents.get(camp).stream().min(UUID::compareTo).orElse(null);
+    }
     /** Confirmed death is idempotent; chunk unload must never call this method. */
     public boolean recordDeath(UUID id) {
         if (!hasCitizen(id)) return false;

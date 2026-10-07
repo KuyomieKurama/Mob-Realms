@@ -29,7 +29,7 @@ python3 scripts/check_resources.py
 ./gradlew runClient
 ```
 
-Mod artifact: `fabric-mod/build/libs/mob-realms-0.5.0-dev.jar`. The core is included in this JAR. Do not install `sim-core` or the sources JAR separately.
+Mod artifact: `fabric-mod/build/libs/mob-realms-0.6.0-dev.jar`. The core is included in this JAR. Do not install `sim-core` or the sources JAR separately.
 
 For a development dedicated server:
 
@@ -80,6 +80,6 @@ Eight bundled profiles use an optional `dimensions` list. Building templates liv
 
 For a user-local installer JDK on Linux x64, use `export JAVA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/mobrealms/jdk-25-x64"` and `export PATH="$JAVA_HOME/bin:$PATH"` before invoking Gradle directly (ARM64: `jdk-25-aarch64`). Installer/upgrade scripts select this JDK themselves.
 
-## 0.5.0-dev validation
+## 0.6.0-dev validation
 
 Local checks: Java 25 compilation of common and client sources against the official Minecraft 26.3 JAR and exact Fabric API modules; 18 core scenarios; 21 installer/upgrade tests; JSON and bilingual translation parity. Local Gradle is blocked by sandbox Unix-socket restrictions, so the repository CI is the full Loom build gate. Do not treat manual javac as a substitute for a successful CI build. No interactive Minecraft rendering or gameplay was run here.

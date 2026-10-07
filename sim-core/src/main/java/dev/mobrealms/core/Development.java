@@ -26,6 +26,7 @@ public final class Development {
     }
     public static final class Person {
         public String species = "";
+        public String name = "";
         public Role role = Role.GATHERER;
         public int experience;
         public boolean pendingSpawn;
@@ -36,6 +37,7 @@ public final class Development {
     public static final class Town {
         public final UUID id;
         public UUID owner;
+        public UUID leader;
         public final Map<UUID,Integer> reputation = new HashMap<>();
         public void reputation(UUID player,int delta){if(reputation.size()<10000||reputation.containsKey(player))reputation.put(player,Math.max(-100,Math.min(100,reputation.getOrDefault(player,0)+delta)));}
         public final List<Site> sites = new ArrayList<>();
@@ -59,7 +61,7 @@ public final class Development {
         public Town(UUID id, ChunkKey origin) { this.id = id; claims.add(origin); }
         public int count(Building b) { return buildings.getOrDefault(b, 0); }
         public int housing() { return 3 + count(Building.HOUSE) * 4; }
-        public String stage(int population) { return population >= 24 && count(Building.MARKET) > 0 ? "city" : population >= 8 ? "village" : "camp"; }
+        public String stage(int population) { return population >= 64 && count(Building.MARKET) > 0 && technologies.size()>=3 ? "realm" : population >= 24 && count(Building.MARKET) > 0 ? "city" : population >= 8 ? "village" : "camp"; }
         public Building objective(int population) {
             if (count(Building.FARM) == 0 || count(Building.FARM) * 6 < population) return Building.FARM;
             if (housing() <= population) return Building.HOUSE;
@@ -84,10 +86,22 @@ public final class Development {
     private final Map<UUID,Town> towns = new LinkedHashMap<>();
     private final Map<UUID,Person> people = new HashMap<>();
     private final Map<String,Relation> relations = new TreeMap<>();
+    private long nextNameSequence=1;
     private final List<String> chronicle = new ArrayList<>();
     public Town town(UUID id) { return Objects.requireNonNull(towns.get(id), "Unknown town"); }
     public Collection<Town> towns() { return Collections.unmodifiableCollection(towns.values()); }
     public Person person(UUID id) { return people.computeIfAbsent(id, key -> new Person()); }
+    public void nameResident(UUID id){
+        Person p=person(id);if(!p.name.isEmpty())return;
+        if(nextNameSequence==Long.MAX_VALUE)throw new IllegalStateException("Name sequence exhausted");
+        p.name=ResidentNames.fromSequence(nextNameSequence++);
+    }
+    public String socialRank(UUID resident,RealmSimulation state){
+        Person p=person(resident);String stage=town(state.citizen(resident).camp()).stage(state.population(state.citizen(resident).camp()));
+        if(resident.equals(town(state.citizen(resident).camp()).leader))return stage+"_leader";
+        String group=p.role==Role.GUARD||p.role==Role.SOLDIER?"military":"civilian";
+        return stage+"_"+group+(p.experience>=200?"_senior":"_junior");
+    }
     public void removePerson(UUID id) { people.remove(id); }
     public void found(UUID id, ChunkKey chunk) { towns.put(id, new Town(id, chunk)); }
     public Optional<UUID> nation(UUID player) { return towns.values().stream().filter(t -> player.equals(t.owner)).map(t -> t.id).findFirst(); }
@@ -191,7 +205,7 @@ public final class Development {
     public void write(DataOutputStream out) throws IOException {
         out.writeInt(towns.size());
         for (Town t:towns.values()) {
-            uuid(out,t.id); out.writeBoolean(t.owner!=null); if(t.owner!=null)uuid(out,t.owner);
+            uuid(out,t.id); out.writeBoolean(t.owner!=null); if(t.owner!=null)uuid(out,t.owner);out.writeBoolean(t.leader!=null);if(t.leader!=null)uuid(out,t.leader);
             out.writeInt(t.reputation.size());for(var e:new TreeMap<>(t.reputation).entrySet()){uuid(out,e.getKey());out.writeInt(e.getValue());}
             out.writeInt(t.claims.size()); for(var c:t.claims){out.writeUTF(c.dimension());out.writeInt(c.x());out.writeInt(c.z());}
             out.writeInt(t.sites.size());for(var site:t.sites){out.writeUTF(site.building().name());out.writeInt(site.x());out.writeInt(site.y());out.writeInt(site.z());out.writeBoolean(site.active());}
@@ -201,15 +215,15 @@ public final class Development {
             out.writeInt(t.foodDays);out.writeInt(t.starvation);out.writeInt(t.births);out.writeInt(t.research);out.writeInt(t.labor);out.writeInt(t.losses);out.writeInt(t.rangedHits);out.writeInt(t.meleeHits);out.writeLong(t.lastDay);out.writeDouble(t.rangedThreat);out.writeUTF(t.obstacle);
             out.writeBoolean(t.project!=null);if(t.project!=null){var p=t.project;out.writeUTF(p.building.name());out.writeInt(p.progress);out.writeInt(p.paid);out.writeBoolean(p.counted);out.writeInt(p.tiles.size());for(var x:p.tiles){out.writeInt(x.x());out.writeInt(x.y());out.writeInt(x.z());out.writeUTF(x.block());out.writeUTF(x.material());}}
         }
-        out.writeInt(people.size());for(var e:new TreeMap<>(people).entrySet()){uuid(out,e.getKey());var p=e.getValue();out.writeUTF(p.species);out.writeUTF(p.role.name());out.writeInt(p.experience);out.writeBoolean(p.pendingSpawn);}
+        out.writeInt(people.size());for(var e:new TreeMap<>(people).entrySet()){uuid(out,e.getKey());var p=e.getValue();out.writeUTF(p.species);out.writeUTF(p.name);out.writeUTF(p.role.name());out.writeInt(p.experience);out.writeBoolean(p.pendingSpawn);}
         out.writeInt(relations.size());for(var e:relations.entrySet()){out.writeUTF(e.getKey());var r=e.getValue();out.writeInt(r.score);out.writeUTF(r.treaty.name());out.writeBoolean(r.overlord!=null);if(r.overlord!=null)uuid(out,r.overlord);out.writeLong(r.lastTradeDay);out.writeUTF(r.offer==null?"":r.offer.name());if(r.offer!=null){uuid(out,r.proposer);out.writeLong(r.expires);}}
-        out.writeInt(chronicle.size());for(String line:chronicle)out.writeUTF(line);
+        out.writeInt(chronicle.size());for(String line:chronicle)out.writeUTF(line);out.writeLong(nextNameSequence);
     }
-    public void read(DataInputStream in, RealmSimulation state) throws IOException {
+    public void read(DataInputStream in, RealmSimulation state, int version) throws IOException {
         int size=bounded(in,1024); if(size!=towns.size())throw new IOException("Town count mismatch");
         Set<UUID> seen=new HashSet<>();Set<ChunkKey> occupied=new HashSet<>();
         for(int n=0;n<size;n++){
-            UUID id=uuid(in);if(!seen.add(id))throw new IOException("Duplicate town");Town t=town(id);t.owner=in.readBoolean()?uuid(in):null;
+            UUID id=uuid(in);if(!seen.add(id))throw new IOException("Duplicate town");Town t=town(id);t.owner=in.readBoolean()?uuid(in):null;if(version>=4){t.leader=in.readBoolean()?uuid(in):null;if(t.leader!=null&&(!state.hasCitizen(t.leader)||!state.citizen(t.leader).camp().equals(id)))throw new IOException("Invalid leader");}
             int memories=bounded(in,10000);for(int i=0;i<memories;i++){UUID player=uuid(in);int score=in.readInt();if(score< -100||score>100||t.reputation.put(player,score)!=null)throw new IOException("Invalid reputation");}
             t.claims.clear();int claims=bounded(in,64);if(claims==0)throw new IOException("No origin claim");for(int i=0;i<claims;i++){var c=new ChunkKey(in.readUTF(),in.readInt(),in.readInt());if(!occupied.add(c))throw new IOException("Overlapping claims");t.claims.add(c);}
             if(!t.claims.contains(state.camp(id).territory()))throw new IOException("Lost origin");
@@ -219,9 +233,15 @@ public final class Development {
             t.foodDays=bounded(in,1000000);t.starvation=bounded(in,1000000);t.births=bounded(in,100000);t.research=bounded(in,10000);t.labor=bounded(in,1000000);t.losses=bounded(in,100000);t.rangedHits=bounded(in,1000000);t.meleeHits=bounded(in,1000000);t.lastDay=in.readLong();t.rangedThreat=finite(in,0,1);t.obstacle=in.readUTF();
             if(in.readBoolean()){Building b=Building.valueOf(in.readUTF());int progress=bounded(in,4096),paid=bounded(in,4096);boolean counted=in.readBoolean();int tiles=bounded(in,4096);List<Tile> list=new ArrayList<>();for(int i=0;i<tiles;i++)list.add(new Tile(in.readInt(),in.readInt(),in.readInt(),in.readUTF(),in.readUTF()));t.project=new Project(b,list);if(progress>paid||paid>tiles||(counted&&paid!=tiles))throw new IOException("Invalid project progress");t.project.progress=progress;t.project.paid=paid;t.project.counted=counted;}
         }
-        people.clear();int persons=bounded(in,100000);if(persons!=state.citizenCount())throw new IOException("Citizen count mismatch");for(int i=0;i<persons;i++){UUID id=uuid(in);if(!state.hasCitizen(id)||people.containsKey(id))throw new IOException("Invalid citizen development");var p=new Person();p.species=in.readUTF();identifier(p.species);p.role=Role.valueOf(in.readUTF());p.experience=bounded(in,10000);p.pendingSpawn=in.readBoolean();people.put(id,p);}
+        people.clear();int persons=bounded(in,100000);if(persons!=state.citizenCount())throw new IOException("Citizen count mismatch");for(int i=0;i<persons;i++){UUID id=uuid(in);if(!state.hasCitizen(id)||people.containsKey(id))throw new IOException("Invalid citizen development");var p=new Person();p.species=in.readUTF();identifier(p.species);if(version>=4){p.name=in.readUTF();if(p.name.isBlank()||p.name.length()>100)throw new IOException("Invalid resident name");}p.role=Role.valueOf(in.readUTF());p.experience=bounded(in,10000);p.pendingSpawn=in.readBoolean();people.put(id,p);}
         int pairs=bounded(in,523776);for(int i=0;i<pairs;i++){String key=in.readUTF();String[] ids=key.split("/");if(ids.length!=2||!key.equals(pair(UUID.fromString(ids[0]),UUID.fromString(ids[1]))))throw new IOException("Invalid relation");var r=new Relation();r.score=in.readInt();if(r.score< -100||r.score>100)throw new IOException("Invalid score");r.treaty=Treaty.valueOf(in.readUTF());r.overlord=in.readBoolean()?uuid(in):null;r.lastTradeDay=in.readLong();String offer=in.readUTF();if(!offer.isEmpty()){r.offer=Treaty.valueOf(offer);r.proposer=uuid(in);r.expires=in.readLong();if(!r.proposer.toString().equals(ids[0])&&!r.proposer.toString().equals(ids[1]))throw new IOException("Invalid proposer");}if(relations.put(key,r)!=null)throw new IOException("Duplicate relation");}
         int history=bounded(in,256);for(int i=0;i<history;i++)chronicle.add(in.readUTF());
+        if(version>=4){
+            nextNameSequence=in.readLong();if(nextNameSequence<=people.size())throw new IOException("Invalid name sequence");
+            Set<String> names=new HashSet<>();for(var person:people.values())if(!names.add(person.name))throw new IOException("Duplicate resident name");
+        }else{
+            nextNameSequence=1;for(UUID id:new TreeSet<>(people.keySet()))nameResident(id);
+        }
     }
     private static int bounded(DataInputStream in,int max)throws IOException{int x=in.readInt();if(x<0||x>max)throw new IOException("Invalid count");return x;}
     private static double finite(DataInputStream in,double min,double max)throws IOException{double x=in.readDouble();if(!Double.isFinite(x)||x<min||x>max)throw new IOException("Invalid value");return x;}

@@ -90,8 +90,8 @@ public final class RealmScreen extends Screen {
                 var person=people.get(i).getAsJsonObject();String citizen=str(person,"id");int row=top+77+(i-start)*40;
                 if(str(data,"own").equals(id)){
                     String[] roles={"gatherer","miner","builder","farmer","guard","soldier","trader","leader"};int current=Arrays.asList(roles).indexOf(str(person,"role"));String next=roles[(current+1)%roles.length];
-                    button(mainX+mainW-88,row,88,"assign",()->action("role "+citizen+" "+next),false);
-                }else button(mainX+mainW-88,row,88,"recruit",()->action("recruit "+citizen),false);
+                    button(mainX+mainW-88,row,88,"assign",()->action("role "+citizen+" "+next),false).setTooltip(net.minecraft.client.gui.components.Tooltip.create(tr("resident_detail",str(person,"name"),name("rank",str(person,"socialRank")),name("role",str(person,"role")),number(person,"rank"),citizen)));
+                }else button(mainX+mainW-88,row,88,"recruit",()->action("recruit "+citizen),false).setTooltip(net.minecraft.client.gui.components.Tooltip.create(tr("resident_detail",str(person,"name"),name("rank",str(person,"socialRank")),name("role",str(person,"role")),number(person,"rank"),citizen)));
             }
             button(mainX,y,80,"prev",()->{peoplePage=Math.max(0,peoplePage-1);rebuildWidgets();},false).active=peoplePage>0;
             button(mainX+85,y,80,"next",()->{peoplePage++;rebuildWidgets();},false).active=(peoplePage+1)*count<people.size();
@@ -174,7 +174,7 @@ public final class RealmScreen extends Screen {
         super.extractRenderState(g,mx,my,delta);
     }
     private void overview(GuiGraphicsExtractor g,JsonObject d){
-        text(g,Component.translatable("species."+str(d,"species").replace(':','.')),mainX,top+74,GOLD);
+        text(g,tr("civilization_stage",Component.translatable("species."+str(d,"species").replace(':','.')),name("stage",str(d,"stage"))),mainX,top+74,GOLD);
         text(g,tr("population",number(d,"population"),number(d,"housing")),mainX,top+93,PAPER);
         text(g,tr("vital",number(d,"births"),number(d,"losses")),mainX,top+113,MUTED);
         text(g,name("growth",str(d,"growth")),mainX,top+132,TEAL);
@@ -209,9 +209,9 @@ public final class RealmScreen extends Screen {
         int count=Math.max(1,(panelH-160)/40),start=peoplePage*count;var people=d.getAsJsonArray("people");
         for(int i=start;i<Math.min(start+count,people.size());i++){
             var p=people.get(i).getAsJsonObject();int y=top+77+(i-start)*40;
-            var label=tr("citizen",str(p,"id").substring(0,8),name("role",str(p,"role")),number(p,"rank"));
+            var label=tr("named_citizen",str(p,"name"),name("rank",str(p,"socialRank")));
             g.text(font,font.plainSubstrByWidth(label.getString(),Math.max(10,mainW-96)),mainX,y,PAPER,false);
-            g.text(font,font.plainSubstrByWidth(Component.translatable("goal.mobrealms."+str(p,"goal")).getString(),Math.max(10,mainW-96)),mainX,y+15,MUTED,false);rule(g,y+34);
+            g.text(font,font.plainSubstrByWidth(tr("citizen_work",name("role",str(p,"role")),number(p,"rank"),Component.translatable("goal.mobrealms."+str(p,"goal"))).getString(),Math.max(10,mainW-96)),mainX,y+15,MUTED,false);rule(g,y+34);
         }
     }
     private void research(GuiGraphicsExtractor g,JsonObject d){

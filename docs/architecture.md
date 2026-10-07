@@ -45,7 +45,7 @@ Each milestone includes complete source/resources, pinned build and Gradle wrapp
 
 ## M2–M4 implementation checkpoint
 
-`RealmSimulation` owns citizen identity, leases, resident indexes, cargo and inventories. `Development` owns towns, roles, construction reservations, claims, reputation, treaties, consent offers, technology, veterans and daily bandit state. `RealmStore` format 3 serializes both; formats 1/2 migrate on load.
+`RealmSimulation` owns citizen identity, leases, resident indexes, cargo and inventories. `Development` owns towns, roles, construction reservations, claims, reputation, treaties, consent offers, technology, veterans and daily bandit state. `RealmStore` format 4 serializes both, resident names and leadership; formats 1/2/3 migrate on load.
 
 `EconomyController` executes loaded extraction/building/trader/combat actions and one queued town report per update. `Blueprints` validates seven datapack templates and snapshots each accepted project. `SettlerEntity` is a custom humanoid NPC. `NationCommands` validates mutations server-side; `RealmDashboard` sends bounded JSON snapshots. Client-only `RealmScreen` renders the atlas; `SettlerRenderer` renders skin/equipment layers.
 

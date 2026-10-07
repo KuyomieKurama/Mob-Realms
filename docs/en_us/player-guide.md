@@ -1,6 +1,6 @@
-# Playing Mob Realms — 0.5.0-dev
+# Playing Mob Realms — 0.6.0-dev
 
-Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.5.0-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
+Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.0-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
 
 ## Settlements
 
@@ -42,7 +42,7 @@ Test a copy of your world: establish a camp near wood and flat ground; donate su
 
 This is a development candidate, not a gameplay-validated release. Automated tests do not validate navigation, combat, rendering or multiplayer behavior. Each settlement is one polity; multi-city countries, automatic repairs, roads, full underground mines, dynamic technology trees and quests are not implemented. Terrain/resource scarcity can halt development; the atlas reports why.
 
-Save format 3 reads formats 1/2. Downgrading requires restoring a full world backup. The stopped-server upgrader creates one; update the client JAR too.
+Save format 4 reads formats 1/2/3. Downgrading requires restoring a full world backup. The stopped-server upgrader creates one; update the client JAR too.
 
 ## Deaths, births and administration
 
@@ -61,3 +61,13 @@ Acceptance: kill one resident and verify population/losses; unload/reload withou
 Events cover founding, completed buildings, births, deaths, technology, explicit diplomacy actions and changing bottlenecks. Bottleneck reports are limited to once per ten seconds per settlement. This is a bounded simulation log; complete Java errors, stack traces and other mods' output remain in `logs/latest.log`.
 
 The default construction growth target is **96 residents, up from 48**. Set `settlementTargetPopulation=96` (3–256) in `config/mobrealms.properties` and restart. Existing configs without this entry also default to 96, and existing settlements can continue building. This is a planning target, not instant population or a strict birth cap. Food, housing, the 64-chunk territory limit and saved global population limits still apply. Starter camps retain three residents.
+
+## Names and social ranks
+
+Every civilization resident receives a world-unique persisted given name and surname. Recruitment, jobs and restarts preserve it; deceased names are never reassigned. The first 4096 combinations are plain names; later cycles add a number. Existing residents are named during legacy-save migration. The mod owns resident nameplates and replaces manual name-tag edits with the saved identity; wild mobs are unaffected.
+
+Social rank is separate from job and veteran level. At 200 experience the resident receives the senior title for the current stage. Camps use newcomer/pioneer and recruit/veteran; villages (8 residents) use resident/freeman and militiaman/sergeant; cities (24 plus market) use citizen/master and guardsman/captain; realms (64 plus market and three technologies) use subject/patrician and legionary/commander. Leaders are chieftain, elder, governor and sovereign respectively. Population decline can lower stage and titles.
+
+The first resident leads without losing their job. Death or recruitment away selects a remaining successor deterministically; leadership persists. Assigning Leader in your nation appoints that resident. This is basic leadership membership, not a full succession/civil-war system. Names and ranks appear on mobs and in Residents; tooltips include job, veteran level and UUID.
+
+Save format 4 migrates formats 1–3. Back up before updating; older builds cannot read format 4. Acceptance: compare identities across recruitment and restart, advance settlement stages, and kill the leader to check succession.
