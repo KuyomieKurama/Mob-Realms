@@ -42,3 +42,9 @@ Prioritize chronicles, leaders and caravans early in M5. M1 camps use only a bas
 ## Delivery policy
 
 Each milestone includes complete source/resources, pinned build and Gradle wrapper, meaningful core tests, client/server verification status, gameplay checks, known limitations, German/English player guide updates and a changelog. Repository changes remain versioned here. Do not document planned behavior as shipped.
+
+## M1 implementation checkpoint
+
+The development branch now contains `sim-core` and `fabric-mod`. Ten core scenarios and a full Java 25/Fabric compile have passed. M1 gameplay acceptance is still outstanding.
+
+Current implementation deliberately bounds background work to delivery of existing cargo. Surveyed deposits, full abstract economic production, configurable offline catch-up and a graphical goal overlay remain future work. Camps are Overworld-only, own one chunk and use a starter roof/banner with an internal stockpile. Profiles are data-driven; faction templates and building styles are not implemented yet. Consult the player guides for exact behavior rather than treating the full architecture above as shipped functionality.

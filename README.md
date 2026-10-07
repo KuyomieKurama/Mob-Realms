@@ -1,31 +1,46 @@
 # Mob Realms
 
-Civilizations for Minecraft Java Edition: mobs establish settlements, gather resources, trade, and eventually develop diplomacy and adaptive strategies.
+Minecraft mobs establish camps and gather materials, with a server-side simulation designed to grow into civilizations.
 
-## Status / Entwicklungsstand
+**Status: M1 development candidate on `feat/m1-foundation`. Not a stable release. Client and dedicated-server gameplay acceptance is still outstanding.**
 
-Design approved; M1 implementation pending. No playable release or verified build is available yet.
+## Documentation
 
-Architektur freigegeben; M1 steht noch aus. Es gibt noch keine spielbare Version und keinen verifizierten Build.
+- [Spielanleitung (Deutsch)](docs/de_de/spielanleitung.md)
+- [Player guide (English)](docs/en_us/player-guide.md)
+- [Server installieren (Deutsch)](docs/de_de/server-installation.md)
+- [Server installation (English)](docs/en_us/server-installation.md)
+- [Build, tests and dependency provenance](docs/development.md)
+- [Architecture and roadmap](docs/architecture.md)
+- [Changelog](CHANGELOG.md)
 
-## Target platform
+## Implemented in the development branch
 
-Minecraft Java Edition 26.3, Java 25, Fabric Loader and Fabric API, Gradle. Development in VS Code on Arch Linux. Use `net.fabricmc.fabric-loom` with unobfuscated Minecraft names, without Yarn mappings. Exact dependency artifacts must be verified and pinned during M1.
+- Pure Java simulation core with camps, citizen identities, utility scoring and protected claims.
+- Zombie and skeleton datapack profiles; three residents per starter camp.
+- Physical collection of whitelisted dropped materials and internal camp inventories.
+- Abstract delivery of already-carried cargo, without creating resources in unloaded chunks.
+- Versioned, checksummed world saves with a previous-save backup.
+- Admin GUI (`/civ admin`), natural camp founding and a saved/cancellable queue of up to 365 days.
+- Java 25 CI build and twelve dependency-free core test scenarios.
 
-## Roadmap
+## Build
 
-- M1: Pure Java simulation core, persistence, debug commands, zombie and skeleton camps, gathering, protection and bounded background simulation.
-- M2: Settlement growth, economy, block-by-block construction, trade and human NPCs.
-- M3: Diplomacy, player nations, recruitment, diplomacy UI and border map.
-- M4: Daily learning, technology tree and veterans.
-- M5: Additional species, chronicles, leaders, caravans, sieges, events and balancing.
+Minecraft **26.3**, Java **25**, Fabric Loader **0.19.5**, Fabric API **0.161.0+26.3**, Loom **1.18.3**, Gradle **9.7.1**. No Yarn mappings or additional runtime mod dependencies.
 
-## Documentation policy / Dokumentation
+```sh
+git clone https://github.com/KuyomieKurama/Mob-Realms.git
+cd Mob-Realms
+git switch feat/m1-foundation
+./gradlew test
+./gradlew build
+./gradlew runClient
+```
 
-Code, tests, resources and documentation are versioned in this repository. Each milestone includes German and English player instructions covering implemented features, installation, configuration, gameplay checks and known limitations. Planned features are explicitly distinguished from available gameplay.
+Development JAR: `fabric-mod/build/libs/mob-realms-0.2.0-dev.jar`. The sources JAR is not an installable mod.
 
-Code, Tests, Ressourcen und Dokumentation werden in diesem Repository versioniert. Jeder Meilenstein erhält eine deutsche und englische Spielanleitung mit Installation, Konfiguration, Spieltests und bekannten Grenzen. Geplante Funktionen werden klar von bereits spielbaren Funktionen getrennt.
+## Planned
 
-## Development
+M2 adds production, growth, full building templates, trade and human NPCs. M3 adds player nations and diplomacy. M4 adds learning and technology. M5 adds more species and emergent stories. These are not current features.
 
-The planned entry point is `./gradlew runClient`. The Gradle wrapper and build configuration have not been added yet; this command is not currently available.
+All source, tests, resources and documentation are versioned here. Each milestone updates both player guides and states what was actually tested.

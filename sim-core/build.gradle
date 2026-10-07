@@ -1,0 +1,10 @@
+plugins { id 'java-library' }
+java { withSourcesJar() }
+tasks.register('coreTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.mobrealms.core.CoreTests'
+}
+tasks.named('check') { dependsOn coreTest }
+// This project deliberately uses the executable coreTest harness, not JUnit discovery.
+tasks.named('test') { enabled = false; dependsOn coreTest }

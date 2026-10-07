@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "mobrealms",
+  "version": "${version}",
+  "name": "Mob Realms",
+  "description": "Server-side civilization simulation for mobs.",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.mobrealms.fabric.MobRealms"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "mixins": [
+    "mobrealms.mixins.json"
+  ]
+}
