@@ -1,6 +1,8 @@
 import argparse
 import importlib.util
 import json
+import io
+import tarfile
 import os
 from pathlib import Path
 import subprocess
@@ -145,6 +147,73 @@ class InstallerTests(unittest.TestCase):
         with patch.object(m, 'download', side_effect=download):
             with self.assertRaises(m.SetupError):
                 m.verified_download('https://example.invalid/file.jar', self.root / 'file.jar')
+
+    def test_existing_java25_avoids_download(self):
+        with patch.object(m, 'inspect_java', return_value='/existing/java'), patch.object(m, 'install_java25') as install:
+            self.assertEqual(m.java_binary(auto_install=True), '/existing/java')
+            install.assert_not_called()
+
+    def test_missing_java_downloads_managed_jdk(self):
+        home = self.root / 'jdk'
+        with patch.object(m, 'inspect_java', return_value=None), \
+             patch.object(m, 'java_home_directory', return_value=(home, 'x64')), \
+             patch.object(m, 'install_java25', return_value=str(home / 'bin/java')) as install:
+            self.assertEqual(m.java_binary(auto_install=True), str(home / 'bin/java'))
+            install.assert_called_once_with(home, 'x64')
+
+    def test_start_does_not_download(self):
+        with patch.object(m, 'inspect_java', return_value=None), \
+             patch.object(m, 'java_home_directory', return_value=(self.root / 'jdk', 'x64')), \
+             patch.object(m, 'install_java25') as install:
+            with self.assertRaises(m.SetupError):
+                m.java_binary()
+            install.assert_not_called()
+
+    def test_archive_rejects_path_traversal(self):
+        archive = self.root / 'bad.tar.gz'
+        with tarfile.open(archive, 'w:gz') as tar:
+            member = tarfile.TarInfo('../escaped')
+            member.size = 1
+            tar.addfile(member, io.BytesIO(b'x'))
+        out = self.root / 'out'
+        out.mkdir()
+        with self.assertRaises(m.SetupError):
+            m.unpack_jdk(archive, out)
+        self.assertFalse((self.root / 'escaped').exists())
+
+    def test_archive_rejects_external_symlink(self):
+        archive = self.root / 'bad.tar.gz'
+        with tarfile.open(archive, 'w:gz') as tar:
+            member = tarfile.TarInfo('jdk/link')
+            member.type = tarfile.SYMTYPE
+            member.linkname = '../../escaped'
+            tar.addfile(member)
+        out = self.root / 'out'
+        out.mkdir()
+        with self.assertRaises(m.SetupError):
+            m.unpack_jdk(archive, out)
+
+    def test_managed_java_install_and_checksum(self):
+        fixture = self.root / 'good.tar.gz'
+        with tarfile.open(fixture, 'w:gz') as tar:
+            for filename in ('jdk/bin/java', 'jdk/bin/javac'):
+                member = tarfile.TarInfo(filename)
+                member.mode = 0o755
+                member.size = 1
+                tar.addfile(member, io.BytesIO(b'x'))
+        expected = m.digest(fixture)
+        def download(url, target, limit=None):
+            if 'api.adoptium.net' in url:
+                target.write_text(json.dumps([{'version': {'major': 25}, 'release_name': 'fixture',
+                    'binary': {'package': {'checksum': expected, 'link': 'https://example.invalid/jdk.tar.gz'}}}]))
+            else:
+                target.write_bytes(fixture.read_bytes())
+        home = self.root / 'managed/jdk'
+        with patch.object(m, 'download', side_effect=download), patch.object(m, 'inspect_java', return_value='/java'), \
+             patch.object(m.shutil, 'disk_usage', return_value=type('Usage', (), {'free': 10 * 1024**3})()):
+            self.assertEqual(m.install_java25(home, 'x64'), str(home / 'bin/java'))
+        self.assertTrue((home / 'bin/javac').is_file())
+        self.assertEqual(json.loads((home / 'mobrealms-java.json').read_text())['sha256'], expected)
 
 
 if __name__ == '__main__':

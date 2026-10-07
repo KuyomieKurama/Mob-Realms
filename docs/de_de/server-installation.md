@@ -4,13 +4,19 @@ Das Skript installiert Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+
 
 ## Voraussetzungen
 
-- Bash, Python 3.10 oder neuer und **Java 25**.
-- Falls Mob Realms noch gebaut werden muss: vollständiges JDK 25 und Internetzugriff für Gradle.
+- Bash und Python 3.10 oder neuer. **Java 25 wird bei Bedarf automatisch installiert.**
+- Falls Mob Realms noch gebaut werden muss: Internetzugriff für Gradle; ein fehlendes JDK 25 wird ebenfalls automatisch installiert.
 - Mindestens 2 GiB freier Platz für die Installation; Welten benötigen später mehr.
 - Standard: 1 GiB anfänglicher und 4 GiB maximaler Java-Heap, zusätzlich mindestens 256 MiB Reserve. Für Linux und andere Programme ist weitere Reserve sinnvoll.
-- HTTPS-Zugriff auf Fabric/Mojang und beim Build auf Gradle/Maven.
+- HTTPS-Zugriff auf Fabric/Mojang, bei Java-Installation auf Adoptium/GitHub und beim Build auf Gradle/Maven.
 
-Das Skript prüft die Voraussetzungen, installiert aber keine Systempakete und verwendet kein sudo. Wähle Java 25 über `JAVA_HOME`, `JAVA_BIN` oder deinen PATH. `JAVA_BIN` bezeichnet genau eine ausführbare Datei, keine Shell-Befehlszeile.
+Das Skript prüft `JAVA_BIN`, `JAVA_HOME` und den PATH auf Java 25. Falls kein passendes Java verfügbar ist, lädt es das aktuelle Eclipse Temurin **JDK 25** von Adoptium, prüft dessen SHA-256 und installiert es benutzerlokal. Für einen Build wird auch geprüft, ob `javac` vorhanden ist.
+
+Installationsort: `${XDG_DATA_HOME:-$HOME/.local/share}/mobrealms/jdk-25-x64` beziehungsweise `jdk-25-aarch64`. Unterstützt werden Linux x64 und ARM64 mit glibc (darunter Arch Linux). Das System-Java und andere Java-Versionen bleiben unverändert; `sudo` ist nicht erforderlich. Zusätzlicher Platz für Download und Entpacken: mindestens 2 GiB.
+
+Das Startskript findet diese Installation beim gleichen Benutzer automatisch wieder, auch ohne gesetztes `JAVA_HOME`. Es lädt beim Start selbst nichts nach: Falls Java später entfernt wurde, erneut das Installationsskript ausführen. Bei anderem Benutzer oder verschobenem `XDG_DATA_HOME` muss Java dort verfügbar sein. Beschädigte vorhandene verwaltete JDKs werden nicht blind überschrieben. Die heruntergeladene Version und Prüfsumme stehen in `mobrealms-java.json` im JDK-Verzeichnis; automatische Java-Updates erfolgen nicht.
+
+Du kannst weiterhin ein eigenes Java 25 über `JAVA_HOME`, `JAVA_BIN` oder PATH verwenden. `JAVA_BIN` bezeichnet genau eine ausführbare Datei, keine Shell-Befehlszeile.
 
 ## Installation aus dem Repository
 

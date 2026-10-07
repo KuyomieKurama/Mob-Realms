@@ -4,6 +4,8 @@ import argparse
 import hashlib
 import json
 import os
+import platform
+import tarfile
 from pathlib import Path
 import re
 import shutil
@@ -37,18 +39,118 @@ def digest(path):
     return h.hexdigest()
 
 
-def java_binary():
-    choice = os.environ.get('JAVA_BIN')
-    if not choice:
-        choice = str(Path(os.environ['JAVA_HOME']) / 'bin/java') if os.environ.get('JAVA_HOME') else 'java'
-    java = shutil.which(choice)
-    require(java, 'Java fehlt / Java missing. Select Java 25 with JAVA_HOME or JAVA_BIN.')
-    result = subprocess.run([java, '-XshowSettings:properties', '-version'], text=True,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=20)
+def inspect_java(choice, require_jdk=False):
+    java = shutil.which(str(choice))
+    if not java:
+        return None
+    try:
+        result = subprocess.run([java, '-XshowSettings:properties', '-version'], text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
     match = re.search(r'java.specification.version\s*=\s*(\d+)', result.stdout)
-    require(result.returncode == 0 and match and int(match.group(1)) == 25,
-            'Java 25 erforderlich / Java 25 required. Check JAVA_HOME/JAVA_BIN and java -version.')
+    if result.returncode != 0 or not match or int(match.group(1)) != 25:
+        return None
+    if require_jdk and not (Path(java).resolve().parent / 'javac').is_file():
+        return None
     return java
+
+
+def java_home_directory():
+    arch = {'x86_64': 'x64', 'amd64': 'x64', 'aarch64': 'aarch64', 'arm64': 'aarch64'}.get(platform.machine().lower())
+    require(platform.system() == 'Linux' and arch, 'Automatic Java installation supports Linux x64/aarch64.')
+    require(platform.libc_ver()[0] != 'musl', 'Automatic Java download requires glibc Linux; configure Java 25 manually on musl.')
+    base = Path(os.environ.get('XDG_DATA_HOME', str(Path.home() / '.local/share'))).expanduser()
+    require(base.is_absolute(), 'XDG_DATA_HOME must be an absolute path.')
+    return base / 'mobrealms' / ('jdk-25-' + arch), arch
+
+
+def unpack_jdk(archive, destination):
+    # Extract regular files first, then validated relative links. Never follow archive links while writing.
+    with tarfile.open(archive, 'r:gz') as tar:
+        members = tar.getmembers()
+        require(sum(max(0, m.size) for m in members) <= 2 * 1024**3, 'JDK archive expands beyond 2 GiB.')
+        root = destination.resolve()
+        for member in members:
+            name = Path(member.name)
+            require(not name.is_absolute() and '..' not in name.parts, 'Unsafe JDK archive path.')
+            target = root / name
+            require(target.resolve().is_relative_to(root), 'JDK archive escapes destination.')
+            if member.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+            elif member.isfile():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with tar.extractfile(member) as source, target.open('xb') as out:
+                    shutil.copyfileobj(source, out)
+                target.chmod(member.mode & 0o777)
+            else:
+                require(member.issym() or member.islnk(), 'Unsupported JDK archive entry.')
+        for member in members:
+            if not (member.issym() or member.islnk()):
+                continue
+            target = root / member.name
+            link = Path(member.linkname)
+            require(not link.is_absolute(), 'Absolute link in JDK archive.')
+            resolved = (target.parent / link if member.issym() else root / link).resolve()
+            require(resolved.is_relative_to(root), 'JDK link escapes destination.')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if member.issym():
+                target.symlink_to(member.linkname)
+            else:
+                os.link(resolved, target)
+
+
+def install_java25(home, arch):
+    require(not home.exists(), f'Existing managed JDK is unusable: {home}. Repair/remove it before retrying.')
+    home.parent.mkdir(parents=True, exist_ok=True)
+    require(shutil.disk_usage(home.parent).free >= 2 * 1024**3, 'At least 2 GiB free space required to install Java.')
+    stage = Path(tempfile.mkdtemp(prefix='.java25-', dir=home.parent))
+    try:
+        metadata = stage / 'release.json'
+        url = f'https://api.adoptium.net/v3/assets/latest/25/hotspot?architecture={arch}&image_type=jdk&os=linux&vendor=eclipse'
+        print('Java 25 fehlt: Eclipse Temurin JDK 25 wird installiert / installing JDK 25 …', flush=True)
+        download(url, metadata, 2 * 1024**2)
+        assets = json.loads(metadata.read_text())
+        require(isinstance(assets, list) and assets, 'No Temurin JDK 25 release found.')
+        release = assets[0]
+        require(release.get('version', {}).get('major') == 25, 'Unexpected Java major version in API response.')
+        package = release['binary']['package']
+        expected = package['checksum']
+        require(re.fullmatch(r'[0-9a-fA-F]{64}', expected), 'Invalid JDK checksum metadata.')
+        archive = stage / 'jdk.tar.gz'
+        download(package['link'], archive)
+        require(digest(archive) == expected.lower(), 'JDK SHA-256 mismatch; installation cancelled.')
+        extracted = stage / 'unpacked'
+        extracted.mkdir()
+        unpack_jdk(archive, extracted)
+        homes = [p for p in extracted.iterdir() if p.is_dir() and (p / 'bin/java').is_file()]
+        require(len(homes) == 1, 'Unexpected JDK archive layout.')
+        require(inspect_java(homes[0] / 'bin/java', require_jdk=True), 'Downloaded JDK 25 cannot execute on this host.')
+        write_json(homes[0] / 'mobrealms-java.json', {'release': release.get('release_name'), 'sha256': expected, 'url': package['link']})
+        homes[0].rename(home)
+        return str(home / 'bin/java')
+    finally:
+        shutil.rmtree(stage)
+
+
+def java_binary(auto_install=False, require_jdk=False):
+    candidates = []
+    if os.environ.get('JAVA_BIN'):
+        candidates.append(os.environ['JAVA_BIN'])
+    if os.environ.get('JAVA_HOME'):
+        candidates.append(str(Path(os.environ['JAVA_HOME']) / 'bin/java'))
+    candidates.append('java')
+    for candidate in candidates:
+        valid = inspect_java(candidate, require_jdk)
+        if valid:
+            return valid
+    home, arch = java_home_directory()
+    valid = inspect_java(home / 'bin/java', require_jdk)
+    if valid:
+        return valid
+    if auto_install:
+        return install_java25(home, arch)
+    raise SetupError('Java 25 fehlt / Java 25 missing. Run install-server.sh to install it automatically.')
 
 
 def memory_bytes(value):
@@ -169,8 +271,8 @@ def verify_install(directory):
 def install(args):
     directory = Path(args.dir).expanduser().absolute()
     require(not directory.is_symlink(), 'Server target must not be a symlink.')
-    java = java_binary()
     if (directory / MANIFEST).is_file():
+        java_binary(auto_install=True)
         verify_install(directory)
         memory = json.loads((directory / 'server-memory.json').read_text())
         check_memory(memory['xms'], memory['xmx'])
@@ -184,6 +286,7 @@ def install(args):
     script_dir = Path(__file__).resolve().parent
     repo = script_dir.parent
     mod = Path(args.mod).expanduser().absolute() if args.mod else repo / f'fabric-mod/build/libs/mob-realms-{VERSIONS["mobrealms"]}.jar'
+    java = java_binary(auto_install=True, require_jdk=not mod.is_file() and not args.mod)
     if not mod.is_file() and not args.mod:
         require((repo / 'gradlew').is_file(), 'No local Mod JAR. Supply --mod /path/to/mob-realms.jar.')
         print('Building Mob Realms and running core tests with Gradle …', flush=True)

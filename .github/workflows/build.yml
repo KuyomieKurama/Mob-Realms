@@ -21,6 +21,13 @@ jobs:
         run: ./gradlew --no-daemon :fabric-mod:runServer --args=--initSettings
       - name: Install a real server and check dependencies without starting a world
         run: |
+          # Exercise automatic Java provisioning despite the runner's preinstalled JDK.
+          mkdir -p "$RUNNER_TEMP/old-java-bin"
+          printf '#!/bin/sh\nprintf "java.specification.version = 21\\n" >&2\n' > "$RUNNER_TEMP/old-java-bin/java"
+          chmod +x "$RUNNER_TEMP/old-java-bin/java"
+          unset JAVA_HOME JAVA_BIN
+          export PATH="$RUNNER_TEMP/old-java-bin:$PATH"
+          export XDG_DATA_HOME="$RUNNER_TEMP/mobrealms-java-data"
           ./scripts/install-server.sh --dir "$RUNNER_TEMP/mob realms server" --mod fabric-mod/build/libs/mob-realms-0.1.0-dev.jar --xms 512M --xmx 1G
           "$RUNNER_TEMP/mob realms server/start-server.sh" --check
           ./scripts/install-server.sh --dir "$RUNNER_TEMP/mob realms server" --mod fabric-mod/build/libs/mob-realms-0.1.0-dev.jar --xms 512M --xmx 1G

@@ -2,7 +2,7 @@
 
 Installs Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and Mob Realms 0.1.0-dev using official Fabric Installer 1.1.2.
 
-Requirements: Bash, Python 3.10+, **Java 25**, HTTPS access and at least 2 GiB free disk space. Building a missing mod JAR also requires the full JDK 25 and access to Gradle/Maven. No Python packages, sudo, system package changes, firewall changes or service installation are used.
+Requirements: Bash, Python 3.10+, HTTPS access and at least 2 GiB free disk space. **Java 25 is installed automatically when unavailable.** Building a missing mod JAR requires access to Gradle/Maven; a missing full JDK is provisioned too. No Python packages, sudo, system package changes, firewall changes or service installation are used.
 
 From the repository's `feat/m1-foundation` branch:
 
@@ -52,3 +52,11 @@ Defaults are Xms 1G / Xmx 4G plus a checked minimum 256 MiB reserve. Leave addit
 The installation is staged before being moved into a fresh/empty destination. Existing non-empty unmanaged directories are rejected. Rerunning against a valid managed server only verifies it and preserves world, mods and settings; new memory flags do not overwrite saved settings. Updates and world migrations are not automatic. Install new versions separately and back up worlds before migrating.
 
 Installed files include `start-server.sh`, `server_manager.py`, `server-memory.json`, `mobrealms-install.json`, `server.properties`, `eula.txt`, and the `mods/` directory. The start scripts work independently of the repository. Restore original managed files or use a fresh installation if integrity checks fail; do not blindly change checksums.
+
+## Automatic Java installation
+
+The installer checks JAVA_BIN, JAVA_HOME and PATH for Java 25, then an existing managed JDK. If none is suitable, it downloads the current Eclipse Temurin JDK 25 through the official Adoptium API, validates its SHA-256, safely extracts it and verifies that it runs. Builds also require `javac`.
+
+The JDK is installed under `${XDG_DATA_HOME:-$HOME/.local/share}/mobrealms/jdk-25-x64` (or `jdk-25-aarch64`). Linux x64/ARM64 with glibc is supported. No sudo or system-Java changes are needed. Allow an additional 2 GiB free space for Java download/extraction and HTTPS access to Adoptium/GitHub.
+
+The start script automatically finds this JDK for the same user and XDG_DATA_HOME. Startup never downloads Java itself; rerun the installer if Java was removed. Broken managed installations are not silently overwritten. Version/download provenance is recorded in `mobrealms-java.json` in the JDK directory. Existing Java 25 installations are reused without automatic updates.

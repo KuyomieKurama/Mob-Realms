@@ -5,7 +5,8 @@
 ### Added
 
 - Linux server installer, verified Fabric downloads, pre-start dependency/integrity checks, EULA gate and repeat-install protection.
-- Eleven installer failure/success scenarios plus real installation smoke test in CI.
+- Automatic user-local Eclipse Temurin JDK 25 installation when Java/JDK 25 is unavailable; SHA-256 verification and bounded safe archive extraction.
+- Seventeen installer/Java failure and success scenarios plus a real installation smoke test in CI.
 
 - Java 25 / Minecraft 26.3 multi-project Fabric build with official example wrapper.
 - Independent simulation core: camps, stable citizen IDs, utility scores, cargo, stocks and protected chunks.
