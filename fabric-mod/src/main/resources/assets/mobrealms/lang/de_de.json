@@ -157,5 +157,7 @@
   "item.mobrealms.founding_banner": "Gründungsbanner",
   "realm.mobrealms.failed": "Aktion nicht möglich: Eigentum, Ressourcen, Ruf, Entfernung und geschütztes Land prüfen.",
   "realm.mobrealms.success": "Reich aktualisiert.",
-  "realm.mobrealms.founded": "Deine Nation wurde gegründet. Verwaltung mit /realm öffnen."
+  "realm.mobrealms.founded": "Deine Nation wurde gegründet. Verwaltung mit /realm öffnen.",
+  "goal.mobrealms.survey": "Fehlende Baurohstoffe suchen",
+  "obstacle.mobrealms.unreachable": "Rohstoff unerreichbar; anderen Zugang suchen"
 }

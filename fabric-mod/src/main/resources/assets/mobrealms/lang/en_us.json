@@ -157,5 +157,7 @@
   "item.mobrealms.founding_banner": "Founding Banner",
   "realm.mobrealms.failed": "Action unavailable: check ownership, resources, reputation, distance and protected land.",
   "realm.mobrealms.success": "Realm updated.",
-  "realm.mobrealms.founded": "Your nation has been founded. Open /realm to manage it."
+  "realm.mobrealms.founded": "Your nation has been founded. Open /realm to manage it.",
+  "goal.mobrealms.survey": "Survey missing construction resources",
+  "obstacle.mobrealms.unreachable": "Resource inaccessible; surveying another route"
 }

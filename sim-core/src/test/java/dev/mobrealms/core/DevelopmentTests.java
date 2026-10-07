@@ -13,8 +13,21 @@ public final class DevelopmentTests {
     private static void check(boolean c,String why){if(!c)throw new AssertionError(why);}
     private static void next(RealmSimulation s){s.advanceDay();s.development().daily(s,A,.2,1,2);}
     public static void main(String[] args)throws Exception{
-        growth();project();trade();diplomacy();learning();save();
-        System.out.println("Passed 6 civilization scenarios.");
+        growth();project();trade();diplomacy();learning();save();production();
+        System.out.println("Passed 7 civilization scenarios.");
+    }
+    private static void production(){
+        var tiles=List.of(new Tile(0,0,0,"minecraft:oak_planks","minecraft:oak_planks"),
+            new Tile(1,0,0,"minecraft:oak_planks","minecraft:oak_planks"),
+            new Tile(2,0,0,"minecraft:cobblestone","minecraft:cobblestone"),
+            new Tile(3,0,0,"minecraft:water","minecraft:air"));
+        var project=new Project(Building.HOUSE,tiles);
+        check(ProductionNeeds.next(project,Map.of("minecraft:oak_planks",2L)).equals("minecraft:cobblestone"),"workers gather already stocked next tile instead of missing stone");
+        check(ProductionNeeds.next(project,Map.of("minecraft:oak_planks",1L)).equals("minecraft:oak_planks"),"aggregate material demand ignored");
+        project.paid=2;
+        check(ProductionNeeds.next(project,Map.of("minecraft:cobblestone",1L))==null,"prepaid materials charged twice or air harvested");
+        project.paid=tiles.size();check(ProductionNeeds.next(project,Map.of())==null,"fully funded project still triggers harvesting");
+        check(ProductionNeeds.next(null,Map.of("minecraft:oak_planks",32L)).equals("minecraft:cobblestone"),"no stone reserve before founding project");
     }
     private static void growth(){
         var s=fixture();var t=s.development().town(A);s.credit(A,"minecraft:bread",20);next(s);next(s);check(s.population(A)==3,"growth without housing");

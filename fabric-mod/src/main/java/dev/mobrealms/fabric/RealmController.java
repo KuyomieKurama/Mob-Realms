@@ -158,7 +158,7 @@ public final class RealmController {
         BlockPos home = economy.home(mob.getUUID(),camp);
         double distance = Math.sqrt(mob.distanceToSqr(home.getX() + .5, home.getY(), home.getZ() + .5));
         boolean sunny = Math.floorMod(level.getOverworldClockTime(), 24000L) < 12000 && !level.isRaining();
-        if((!sunny || !profile.avoidsSun()) && mob.getHealth() >= mob.getMaxHealth()*.25 && citizen.cargo().isEmpty() && economy.work(mob,level,camp)) return;
+        if((!sunny || !profile.avoidsSun()) && mob.getHealth() >= mob.getMaxHealth()*.25 && citizen.cargo().isEmpty() && economy.work(mob,level,camp)) { goals.put(mob.getUUID(),UtilityBrain.Goal.IDLE); return; }
         ItemEntity target = null;
         if (!sunny || !profile.avoidsSun()) {
             var candidates = level.getEntitiesOfClass(ItemEntity.class, new AABB(home).inflate(12), e -> suitable(e, level) && state.development().town(camp.id()).claims.contains(ChunkKey.fromBlock(dimension(level), e.blockPosition().getX(), e.blockPosition().getZ())));

@@ -2,6 +2,8 @@
 
 ## 0.5.0-dev — M2–M4 development candidate
 
+- Follow-up: workers select missing materials across the remaining build order, sweep terrain-height-aware resource columns, abandon stalled targets and approach accessible neighboring positions. Idle workers no longer display stale patrol goals; unsuccessful surveys remain productive tasks rather than patrols.
+
 - Persistent settlement objectives, material-paid construction, food/housing growth, processing and equipment.
 - Eight species profiles, custom skinned human settlers, dimension-aware natural founding and expanding resource commons.
 - Player founding banner, claims, reputation, recruitment, roles, treaty consent, barter and basic combat.
