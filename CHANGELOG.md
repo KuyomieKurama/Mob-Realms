@@ -2,6 +2,7 @@
 
 - Parallel material deficits, shared bounded wilderness surveys and discovered-source reuse.
 - Cherry/pale oak/stripped wood support and accounting for logs awaiting processing.
+- Citizen navigation length increased to match the expanded survey without changing wild mobs.
 - Reserved resource targets, 30-second rejection cooldowns, actual path reachability and progress timeouts.
 - Shallow soil overburden extraction with real cargo and line-of-sight checks; protected land, foreign claims and settlement footprints remain excluded.
 - Farmer arrival/cooldown checks before experience, useful work between tending visits.

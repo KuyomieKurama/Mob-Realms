@@ -91,6 +91,9 @@ public final class RealmController {
         access.mobrealms$targets().removeAllGoals(g -> true);
         access.mobrealms$goals().addGoal(0, new FloatGoal(mob));
         mob.setTarget(null); mob.setPersistenceRequired(); mob.setCanPickUpLoot(false);
+        // 26.3 navigation otherwise derives its search length from FOLLOW_RANGE (often only 16).
+        // PathNavigationRegion uses getChunkNow, so this does not force-load the larger area.
+        mob.getNavigation().setRequiredPathLength(96);
         state.markLoadedWaiting(mob.getUUID());mob.setNoAi(true);allocationDirty=true;
     }
     private void updateIdentity(Mob mob){
