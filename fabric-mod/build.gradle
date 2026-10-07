@@ -1,0 +1,23 @@
+plugins { id 'net.fabricmc.fabric-loom' version "${loom_version}" }
+base { archivesName = 'mob-realms' }
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        mobrealms {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    implementation project(':sim-core')
+    include project(':sim-core')
+}
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+java { withSourcesJar() }

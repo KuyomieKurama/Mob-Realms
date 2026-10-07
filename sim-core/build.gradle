@@ -1,0 +1,9 @@
+plugins { id 'java-library' }
+java { withSourcesJar() }
+tasks.register('coreTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.mobrealms.core.CoreTests'
+}
+tasks.named('check') { dependsOn coreTest }
+tasks.named('test') { dependsOn coreTest }
