@@ -69,11 +69,11 @@ def upgrade(directory, mod):
         sm.write_json(directory / JOURNAL, {'backup': str(backup), 'target': sm.VERSIONS['mobrealms']})
         replacements = ['mods/mob-realms.jar', 'server_manager.py', 'start-server.sh', sm.MANIFEST]
         try:
-            replace_file(mod, directory / replacements[0])
             scripts = Path(__file__).resolve().parent
             replace_file(scripts / 'server_manager.py', directory / 'server_manager.py')
             replace_file(scripts / 'start-server.sh', directory / 'start-server.sh')
             (directory / 'start-server.sh').chmod(0o755)
+            replace_file(mod, directory / replacements[0])
             current = dict(previous)
             current['versions'] = dict(sm.VERSIONS)
             current['files'] = dict(previous['files'])
