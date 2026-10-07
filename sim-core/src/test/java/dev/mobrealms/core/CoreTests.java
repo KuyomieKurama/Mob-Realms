@@ -16,6 +16,8 @@ public final class CoreTests {
         test("save roundtrip invalidates old leases", CoreTests::roundtrip);
         test("corruption rejected; backup retained", CoreTests::persistence);
         test("daily abstraction creates no goods", CoreTests::days);
+        test("queued days are bounded, cancellable and restartable", CoreTests::queuedDays);
+        test("version one worlds migrate", CoreTests::legacySave);
         test("clock ignores backward jumps and bounds catch-up", CoreTests::clock);
         test("budget resumes fairly", CoreTests::budget);
         test("utility responds to danger and species", CoreTests::utility);
@@ -89,6 +91,39 @@ public final class CoreTests {
         s.deactivate(l); for (int i = 0; i < 100; i++) s.advanceDay();
         check(s.stock(CAMP).get("minecraft:bone") == 2, "abstract update invented resources");
     }
+    private static void queuedDays() throws Exception {
+        var s = state();
+        for (int i = 3; i < 103; i++) {
+            UUID id = new UUID(0, i); s.addCitizen(id, CAMP, .5);
+            var lease = s.activate(id); s.collect(lease, "minecraft:bone", 1, 16); s.deactivate(lease);
+        }
+        check(s.enqueueDays(365) && !s.enqueueDays(1) && !s.enqueueDays(0), "queue bound");
+        check(!s.processDaySlice(10) && s.day() == 0, "unbounded day processing");
+        check(s.stock(CAMP).get("minecraft:bone") == 9, "slice processed too many citizens");
+        s = RealmStore.decode(RealmStore.encode(s));
+        check(s.pendingDays() == 365, "queue lost on restart");
+        s.removeCitizen(new UUID(0, 11)); // cursor may refer to a citizen which died
+        int slices = 0;
+        while (s.pendingDays() > 0) { s.processDaySlice(10); check(++slices < 5000, "queue stuck"); }
+        check(s.day() == 365 && s.stock(CAMP).get("minecraft:bone") == 100, "restart duplicated/lost cargo or days");
+        check(s.enqueueDays(30), "queue did not reopen"); s.processDaySlice(1);
+        check(s.cancelDays() == 30 && !s.processDaySlice(10) && s.day() == 365, "cancel failed");
+        check(s.enqueueDays(1), "cannot enqueue after cancellation");
+        while (s.pendingDays() > 0) s.processDaySlice(32);
+        check(s.day() == 366, "cancel corrupted next day");
+    }
+    private static void legacySave() throws Exception {
+        byte[] modern = RealmStore.encode(state());
+        // V2 inserts pending:int, hasCursor:boolean after the clocks at byte 36.
+        byte[] legacy = new byte[modern.length - 5];
+        System.arraycopy(modern, 0, legacy, 0, 36);
+        System.arraycopy(modern, 41, legacy, 36, modern.length - 41);
+        java.nio.ByteBuffer.wrap(legacy).putInt(4, 1);
+        var crc = new java.util.zip.CRC32(); crc.update(legacy, 0, legacy.length - 8);
+        java.nio.ByteBuffer.wrap(legacy).putLong(legacy.length - 8, crc.getValue());
+        var restored = RealmStore.decode(legacy);
+        check(restored.pendingDays() == 0 && restored.hasCitizen(CITIZEN), "legacy save migration");
+    }
     private static void clock() {
         var s = state();
         check(s.observeWorldDay(0, 7) == 0, "initial clock");
@@ -114,6 +149,7 @@ public final class CoreTests {
         check(brain.choose(zombie, o) == UtilityBrain.Goal.GATHER, "zombie profile");
         check(brain.choose(skeleton, o) == UtilityBrain.Goal.REGROUP, "skeleton profile");
         check(brain.choose(zombie, new UtilityBrain.Observation(true, false, true, true, 1, .5)) == UtilityBrain.Goal.SHELTER, "sun priority");
+        check(brain.choose(zombie, new UtilityBrain.Observation(false, false, false, false, 0, .5)) == UtilityBrain.Goal.PATROL, "idle residents never patrol");
         expect(IllegalArgumentException.class, () -> new SpeciesProfile("a:b", "a:c", Double.NaN, 1, 1, true));
     }
     private static void check(boolean condition, String message) { if (!condition) throw new AssertionError(message); }

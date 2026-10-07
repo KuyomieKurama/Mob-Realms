@@ -6,6 +6,8 @@ import tarfile
 import os
 from pathlib import Path
 import subprocess
+import sys
+import fcntl
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -15,6 +17,10 @@ ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('manager', ROOT / 'scripts/server_manager.py')
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
+sys.modules["server_manager"] = m
+spec_upgrade = importlib.util.spec_from_file_location("upgrade", ROOT / "scripts/upgrade_server.py")
+u = importlib.util.module_from_spec(spec_upgrade)
+spec_upgrade.loader.exec_module(u)
 
 
 def jar(path, mod_id=None, version=None):
@@ -69,6 +75,56 @@ class InstallerTests(unittest.TestCase):
              patch.object(m, 'verified_download', side_effect=self.fake_download), \
              patch.object(m.subprocess, 'run', side_effect=self.fake_java):
             return m.install(self.args(**changes))
+
+    def old_server(self):
+        self.install()
+        jar(self.target / 'mods/mob-realms.jar', 'mobrealms', '0.1.0-dev')
+        manifest = json.loads((self.target / m.MANIFEST).read_text())
+        manifest['versions']['mobrealms'] = '0.1.0-dev'
+        manifest['files']['mods/mob-realms.jar'] = m.digest(self.target / 'mods/mob-realms.jar')
+        m.write_json(self.target / m.MANIFEST, manifest)
+        (self.target / 'world').mkdir()
+        (self.target / 'world/level.dat').write_bytes(b'precious-world')
+        (self.target / 'world/session.lock').write_bytes(b'lock')
+
+    def test_upgrade_preserves_full_backup(self):
+        self.old_server()
+        backup = u.upgrade(self.target, self.mod)
+        self.assertEqual((backup / 'world/level.dat').read_bytes(), b'precious-world')
+        self.assertEqual((self.target / 'world/level.dat').read_bytes(), b'precious-world')
+        self.assertEqual(m.read_mod(backup / 'mods/mob-realms.jar')['version'], '0.1.0-dev')
+        m.verify_install(self.target)
+        self.assertIsNone(u.upgrade(self.target, self.mod))
+
+    def test_upgrade_rolls_back_failed_replacement(self):
+        self.old_server()
+        original = u.replace_file
+        attempts = 0
+        def replace(source, target):
+            nonlocal attempts
+            attempts += 1
+            if attempts == 2:
+                raise OSError('simulated replacement failure')
+            original(source, target)
+        with patch.object(u, 'replace_file', side_effect=replace):
+            with self.assertRaises(OSError):
+                u.upgrade(self.target, self.mod)
+        self.assertEqual(m.read_mod(self.target / 'mods/mob-realms.jar')['version'], '0.1.0-dev')
+        self.assertFalse((self.target / u.JOURNAL).exists())
+
+    def test_upgrade_refuses_running_server(self):
+        self.old_server()
+        with (self.target / '.mobrealms-server.lock').open('a+b') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with self.assertRaises(m.SetupError):
+                u.upgrade(self.target, self.mod)
+        self.assertEqual(m.read_mod(self.target / 'mods/mob-realms.jar')['version'], '0.1.0-dev')
+
+    def test_incomplete_upgrade_blocks_start(self):
+        self.install()
+        (self.target / u.JOURNAL).write_text('{}')
+        with self.assertRaises(m.SetupError):
+            m.verify_install(self.target)
 
     def test_install_and_check_preserve_eula(self):
         self.install()

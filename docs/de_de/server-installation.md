@@ -1,6 +1,6 @@
 # Server automatisch installieren (Linux)
 
-Das Skript installiert Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und Mob Realms 0.1.0-dev. Es verwendet den offiziellen Fabric Installer 1.1.2. Es ist für Arch Linux und andere Linux-Systeme gedacht, ohne zusätzliche Python-Pakete.
+Das Skript installiert Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und Mob Realms 0.2.0-dev. Es verwendet den offiziellen Fabric Installer 1.1.2. Es ist für Arch Linux und andere Linux-Systeme gedacht, ohne zusätzliche Python-Pakete.
 
 ## Voraussetzungen
 
@@ -32,7 +32,7 @@ Mit bereits gebauter oder aus dem CI-Artefakt entpackter Mod-JAR:
 
 ```sh
 ./scripts/install-server.sh --dir "$HOME/mob-realms-server" \
-  --mod /pfad/mob-realms-0.1.0-dev.jar --xms 1G --xmx 4G
+  --mod /pfad/mob-realms-0.2.0-dev.jar --xms 1G --xmx 4G
 ```
 
 Die Datei muss die normale Mod-JAR sein, nicht `-sources.jar`. Relative Pfade und Pfade mit Leerzeichen werden unterstützt.
@@ -90,3 +90,31 @@ Für einen einzelnen Start kannst du RAM überschreiben:
 Eine wiederholte Installation in einen gültigen, verwalteten Ordner prüft ihn nur und erhält Welt, Mods und Einstellungen. Neue RAM-Optionen überschreiben dabei nicht `server-memory.json`. Ein fremder oder nicht leerer Serverordner wird abgelehnt. Das Skript führt keine Updates oder Weltmigrationen durch; installiere neue Versionen separat und sichere Welten vor manueller Übernahme.
 
 Bei beschädigten oder ausgetauschten verwalteten JARs bricht die Prüfung ab. Stelle die Originaldateien wieder her oder installiere in ein neues Verzeichnis, statt Prüfsummen blind anzupassen.
+
+## Upgrade von 0.1.0-dev auf 0.2.0-dev
+
+1. Den Server in seiner Konsole mit `stop` beenden und auf das vollständige Beenden warten.
+2. Im Repository den Entwicklungsbranch aktualisieren und das Upgrade ausführen:
+
+```sh
+git switch feat/m1-foundation
+git pull --ff-only
+bash scripts/upgrade-server.sh --dir "$HOME/mob-realms-server"
+```
+
+Das Skript findet/installiert Java 25, baut die aktuelle Mod inklusive Tests und prüft die verwaltete Installation. Es erstellt ein **vollständiges Backup neben dem Serverordner** (einschließlich Welt, Konfiguration, Mods und Einstellungen). Danach ersetzt es die Mod-JAR und die Startprüfung. Minecraft, Fabric, zusätzliche Mods, EULA und Welt werden nicht aktualisiert. Für das Backup muss entsprechend freier Platz vorhanden sein. Symlinks werden abgelehnt, damit kein unvollständiges Weltbackup entsteht.
+
+Mit bereits gebauter JAR:
+
+```sh
+bash scripts/upgrade-server.sh --dir "$HOME/mob-realms-server" \
+  --mod fabric-mod/build/libs/mob-realms-0.2.0-dev.jar
+"$HOME/mob-realms-server/start-server.sh" --check
+"$HOME/mob-realms-server/start-server.sh"
+```
+
+Das Skript startet den Server nicht automatisch. Aktualisiere im Client ebenfalls die Mob-Realms-JAR und entferne die alte JAR aus dessen `mods`-Ordner. Fabric API bleibt gleich.
+
+Bei gewöhnlichen Austauschfehlern werden die alten Dateien wiederhergestellt. Bei Prozessabbruch/Stromausfall kann `mobrealms-upgrade-incomplete.json` zurückbleiben; der neue Starter verweigert dann den Start. Den darin genannten vollständigen Backupordner als Serverordner wiederherstellen, statt den Marker blind zu löschen. Nach dem ersten Start wird das Realm-Speicherformat migriert: Ein Downgrade benötigt das vollständige Backup.
+
+Das Skript ist für Server aus unserem Installer und Mod-Upgrades mit unveränderten Minecraft/Fabric-Versionen gedacht. Es lädt keinen beliebigen neuesten Release herunter; es baut den ausgecheckten Repository-Stand.

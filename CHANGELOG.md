@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0-dev – admin and simulation expansion
+
+- `/civ admin`: native dialog with paginated camp snapshots, day input, cancellation and chunk protection; all actions retain player permissions.
+- `/civ simulate 1..365` and `/civ simulate cancel`; persisted incremental day cursor, at most 32 citizens per daily task.
+- Save format 2 with format-1 migration and regression tests.
+- Natural camp searches every 30 seconds after the grace period, configurable bounded attempts and conservative ground filtering; simulated days can trigger searches.
+- Night patrols for idle residents; visible server-wide 1–5× tick-rate controls and explicit spectator/creative/survival commands.
+- Stopped-server upgrade with complete backup, runtime/world locks, failure rollback and an interrupted-upgrade marker; 21 installer/upgrade tests.
+- DE/EN player guides and GUI translations updated. City growth remains planned for M2.
+
 ## 0.1.0-dev — M1 development candidate (unreleased)
 
 ### Added

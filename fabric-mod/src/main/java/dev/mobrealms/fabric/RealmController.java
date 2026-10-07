@@ -35,7 +35,8 @@ public final class RealmController {
     private final TickScheduler scheduler = new TickScheduler(2048);
     private final UtilityBrain brain = new UtilityBrain();
     private long ticks;
-    private int pendingDays;
+    private boolean dayQueued, naturalQueued;
+    private int naturalAttemptsLeft;
     private boolean healthy = true;
     private static final Set<String> MATERIALS = Set.of("minecraft:rotten_flesh", "minecraft:bone", "minecraft:arrow",
             "minecraft:stick", "minecraft:cobblestone", "minecraft:oak_log", "minecraft:coal", "minecraft:iron_ingot");
@@ -51,7 +52,9 @@ public final class RealmController {
     public RealmSimulation state() { return state; }
     public List<String> species() { return definitions.ids(); }
     public String goal(UUID id) { return goals.getOrDefault(id, UtilityBrain.Goal.IDLE).name().toLowerCase(Locale.ROOT); }
-    public int pendingDays() { return pendingDays; }
+    public int pendingDays() { return state.pendingDays(); }
+    public RealmConfig config() { return config; }
+    public int cancelDays() { int count = state.cancelDays(); save(); return count; }
     public void reloadDefinitions() {
         // A removed profile cannot invalidate living citizens: reject the whole replacement.
         try {
@@ -88,17 +91,27 @@ public final class RealmController {
     }
     public boolean healthy() { return healthy; }
     public boolean enqueueDays(int days) {
-        if (!healthy || days < 1 || days > 7 || pendingDays + days > 7) return false;
-        pendingDays += days; return true;
+        if (!healthy || !state.enqueueDays(days)) return false;
+        save(); return healthy;
     }
     public void tick() {
         if (!healthy) return;
         ticks++;
         if (ticks % 20 == 0) {
             int passed = state.observeWorldDay(Math.max(0, Math.floorDiv(server.overworld().getOverworldClockTime(), 24000L)), 7);
-            pendingDays = Math.min(7, pendingDays + passed);
+            int accepted = Math.min(RealmSimulation.MAX_PENDING_DAYS - state.pendingDays(), passed);
+            if (accepted > 0) state.enqueueDays(accepted);
         }
-        if (pendingDays > 0 && scheduler.submit(() -> state.advanceDay())) pendingDays--;
+        if (state.pendingDays() > 0 && !dayQueued) {
+            dayQueued = scheduler.submit(() -> {
+                dayQueued = false;
+                if (state.processDaySlice(32)) {
+                    if (config.naturalCamps() && state.day() >= config.graceDays())
+                        naturalAttemptsLeft = Math.max(naturalAttemptsLeft, config.naturalAttempts());
+                    if (state.pendingDays() == 0) save();
+                }
+            });
+        }
         for (var mob : loaded.values()) {
             if (!mob.isAlive()) continue;
             activate(mob);
@@ -110,9 +123,16 @@ public final class RealmController {
                 if (loaded.get(id) == mob && leases.containsKey(id) && mob.isAlive()) update(mob);
             })) queued.remove(id);
         }
+        if (config.naturalCamps() && ticks % config.naturalIntervalTicks() == 0
+                && Math.max(state.day(), server.overworld().getOverworldClockTime() / 24000L) >= config.graceDays())
+            naturalAttemptsLeft = Math.max(naturalAttemptsLeft, config.naturalAttempts());
+        if (naturalAttemptsLeft > 0 && !naturalQueued) {
+            naturalQueued = scheduler.submit(() -> {
+                naturalQueued = false; naturalAttemptsLeft--;
+                if (state.camps().size() >= state.maxCamps() || naturalCamp()) naturalAttemptsLeft = 0;
+            });
+        }
         scheduler.run(config.budgetNanos(), config.workPerTick());
-        if (config.naturalCamps() && ticks % 1200 == 0 && state.camps().size() < state.maxCamps()
-                && server.overworld().getOverworldClockTime() >= config.graceDays() * 24000L) naturalCamp();
     }
     private void update(Mob mob) {
         var citizen = state.citizen(mob.getUUID()); var camp = state.camp(citizen.camp());
@@ -121,7 +141,7 @@ public final class RealmController {
         var profile = definitions.get(camp.species());
         BlockPos home = new BlockPos(camp.x(), camp.y(), camp.z());
         double distance = Math.sqrt(mob.distanceToSqr(home.getX() + .5, home.getY(), home.getZ() + .5));
-        boolean sunny = Math.floorMod(level.getOverworldClockTime(), 24000L) < 12000 && level.canSeeSky(mob.blockPosition()) && !level.isRaining();
+        boolean sunny = Math.floorMod(level.getOverworldClockTime(), 24000L) < 12000 && !level.isRaining();
         ItemEntity target = null;
         if (!sunny || !profile.avoidsSun()) {
             var candidates = level.getEntitiesOfClass(ItemEntity.class, new AABB(home).inflate(12), e -> suitable(e, level) && camp.territory().equals(ChunkKey.fromBlock(dimension(level), e.blockPosition().getX(), e.blockPosition().getZ())));
@@ -148,7 +168,26 @@ public final class RealmController {
                     if (stack.isEmpty()) target.discard(); else target.setItem(stack);
                 }
             }
+            case PATROL -> patrol(mob, level, camp, home);
             case IDLE -> mob.getNavigation().stop();
+        }
+    }
+    private void patrol(Mob mob, ServerLevel level, RealmSimulation.Camp camp, BlockPos home) {
+        if (!mob.getNavigation().isDone()) return;
+        var random = level.getRandom();
+        for (int attempt = 0; attempt < 8; attempt++) {
+            int dx = random.nextInt(15) - 7, dz = random.nextInt(15) - 7;
+            if (dx * dx + dz * dz < 9) continue;
+            BlockPos target = home.offset(dx, 0, dz);
+            if (!camp.territory().equals(ChunkKey.fromBlock(dimension(level), target.getX(), target.getZ()))
+                    || state.protectedAt(camp.territory()) || !level.hasChunkAt(target)) continue;
+            for (int dy = -2; dy <= 2; dy++) {
+                BlockPos feet = target.offset(0, dy, 0);
+                if (level.getBlockState(feet.below()).isSolidRender() && level.isEmptyBlock(feet)
+                        && level.isEmptyBlock(feet.above()) && level.getWorldBorder().isWithinBounds(feet)) {
+                    if (mob.getNavigation().moveTo(feet.getX() + .5, feet.getY(), feet.getZ() + .5, .8)) return;
+                }
+            }
         }
     }
     private boolean suitable(ItemEntity entity, ServerLevel level) {
@@ -204,17 +243,26 @@ public final class RealmController {
         }
         save(); return true;
     }
-    private void naturalCamp() {
-        var players = server.getPlayerList().getPlayers(); if (players.isEmpty()) return;
+    private boolean naturalCamp() {
+        var players = server.getPlayerList().getPlayers().stream()
+                .filter(p -> p.level().dimension().equals(Level.OVERWORLD)).toList();
+        if (players.isEmpty()) return false;
         var random = server.overworld().getRandom();
-        if (random.nextInt(8) != 0) return;
         var player = players.get(random.nextInt(players.size())); ServerLevel level = (ServerLevel) player.level();
-        int x = player.blockPosition().getX() + random.nextInt(129) - 64;
-        int z = player.blockPosition().getZ() + random.nextInt(129) - 64;
+        int x = player.blockPosition().getX() + random.nextInt(193) - 96;
+        int z = player.blockPosition().getZ() + random.nextInt(193) - 96;
         BlockPos candidate = new BlockPos(x, player.blockPosition().getY(), z);
-        if (!level.hasChunkAt(candidate) || Math.hypot(x - player.getX(), z - player.getZ()) < 32) return;
+        if (!level.hasChunkAt(candidate) || Math.hypot(x - player.getX(), z - player.getZ()) < 32) return false;
         BlockPos surface = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, candidate);
-        var ids = definitions.ids(); found(level, surface, ids.get(random.nextInt(ids.size())));
+        // Conservative terrain filter; placed natural blocks cannot be distinguished. Protect player land explicitly.
+        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+            if (!level.hasChunkAt(surface.offset(dx, -1, dz))) return false;
+            var floor = level.getBlockState(surface.offset(dx, -1, dz));
+            if (!(floor.is(Blocks.GRASS_BLOCK) || floor.is(Blocks.DIRT) || floor.is(Blocks.SAND)
+                    || floor.is(Blocks.PODZOL) || floor.is(Blocks.MYCELIUM) || floor.is(Blocks.SNOW_BLOCK))) return false;
+        }
+        var ids = definitions.ids();
+        return !ids.isEmpty() && found(level, surface, ids.get(random.nextInt(ids.size())));
     }
     public static String dimension(ServerLevel level) { return level.dimension().identifier().toString(); }
 }

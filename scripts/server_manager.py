@@ -16,7 +16,7 @@ import urllib.request
 import zipfile
 
 VERSIONS = {"minecraft": "26.3", "loader": "0.19.5", "fabric_api": "0.161.0+26.3",
-            "installer": "1.1.2", "mobrealms": "0.1.0-dev"}
+            "installer": "1.1.2", "mobrealms": "0.2.0-dev"}
 MANIFEST = "mobrealms-install.json"
 MAVEN = "https://maven.fabricmc.net"
 EULA_URL = "https://www.minecraft.net/eula"
@@ -242,11 +242,13 @@ def accept_eula(directory):
     (directory / 'eula.txt').write_text(f'# Accepted by explicit --accept-eula option; {EULA_URL}\neula=true\n')
 
 
-def verify_install(directory):
+def verify_install(directory, expected_versions=None):
+    expected_versions = expected_versions or VERSIONS
+    require(not (directory / "mobrealms-upgrade-incomplete.json").exists(), "Incomplete upgrade: restore the backup before starting.")
     manifest_path = directory / MANIFEST
     require(manifest_path.is_file(), f'Installation manifest missing: {manifest_path}')
     manifest = json.loads(manifest_path.read_text())
-    require(manifest.get('schema') == 1 and manifest.get('versions') == VERSIONS, 'Installation version mismatch; use a new directory.')
+    require(manifest.get('schema') == 1 and manifest.get('versions') == expected_versions, 'Installation version mismatch; use a new directory.')
     files = manifest.get('files')
     require(isinstance(files, dict) and files, 'Empty or invalid installation manifest.')
     required = {'server.jar', 'fabric-server-launch.jar', 'mods/mob-realms.jar', 'mods/fabric-api.jar'}
@@ -257,7 +259,7 @@ def verify_install(directory):
         require(not Path(relative).is_absolute() and '..' not in Path(relative).parts, 'Invalid manifest path.')
         require(path.is_file() and not path.is_symlink(), f'Missing or symlinked runtime file: {relative}')
         require(digest(path) == expected, f'File changed/corrupt: {relative}. Restore the file or install into a new directory.')
-    check_mod(directory / 'mods/mob-realms.jar', 'mobrealms', VERSIONS['mobrealms'])
+    check_mod(directory / 'mods/mob-realms.jar', 'mobrealms', expected_versions['mobrealms'])
     check_mod(directory / 'mods/fabric-api.jar', 'fabric-api', VERSIONS['fabric_api'])
     seen = set()
     for path in sorted((directory / 'mods').glob('*.jar')):

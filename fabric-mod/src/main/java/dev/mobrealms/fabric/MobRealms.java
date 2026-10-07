@@ -52,6 +52,40 @@ public final class MobRealms implements ModInitializer {
         });
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> dispatcher.register(
             Commands.literal("civ").requires(s -> s.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .then(Commands.literal("admin").executes(ctx -> AdminDialog.open(ctx.getSource(), require(ctx.getSource()), 0))
+                    .then(Commands.literal("page").then(Commands.argument("page", IntegerArgumentType.integer(0, 204))
+                        .executes(ctx -> AdminDialog.open(ctx.getSource(), require(ctx.getSource()), IntegerArgumentType.getInteger(ctx, "page")))))
+                    .then(Commands.literal("simulate").then(Commands.argument("days", IntegerArgumentType.integer(1, dev.mobrealms.core.RealmSimulation.MAX_PENDING_DAYS))
+                        .executes(ctx -> {
+                            var source = ctx.getSource(); source.getPlayerOrException(); var c = require(source);
+                            int days = IntegerArgumentType.getInteger(ctx, "days");
+                            message(source, c.enqueueDays(days) ? "queued" : "busy", days);
+                            return AdminDialog.open(source, c, 0);
+                        })))
+                    .then(Commands.literal("cancel").executes(ctx -> {
+                        var source = ctx.getSource(); source.getPlayerOrException(); var c = require(source);
+                        message(source, "cancelled", c.cancelDays()); return AdminDialog.open(source, c, 0);
+                    }))
+                    .then(Commands.literal("protect").executes(ctx -> {
+                        var source = ctx.getSource(); source.getPlayerOrException(); protection(source, true);
+                        return AdminDialog.open(source, require(source), 0);
+                    })))
+                .then(Commands.literal("speed").then(Commands.argument("multiplier", IntegerArgumentType.integer(1, 5)).executes(ctx -> {
+                    var source = ctx.getSource(); int multiplier = IntegerArgumentType.getInteger(ctx, "multiplier");
+                    source.getServer().getCommands().performPrefixedCommand(source, "tick rate " + (20 * multiplier));
+                    message(source, "speed_scope"); return 1;
+                })))
+                .then(Commands.literal("observe").executes(ctx -> {
+                    var source = ctx.getSource(); source.getPlayerOrException();
+                    source.getServer().getCommands().performPrefixedCommand(source, "gamemode spectator @s");
+                    message(source, "observe"); return 1;
+                }).then(Commands.literal("creative").executes(ctx -> {
+                    var source = ctx.getSource(); source.getPlayerOrException();
+                    source.getServer().getCommands().performPrefixedCommand(source, "gamemode creative @s"); return 1;
+                })).then(Commands.literal("survival").executes(ctx -> {
+                    var source = ctx.getSource(); source.getPlayerOrException();
+                    source.getServer().getCommands().performPrefixedCommand(source, "gamemode survival @s"); return 1;
+                })))
                 .then(Commands.literal("info").executes(ctx -> info(ctx.getSource())))
                 .then(Commands.literal("relations").executes(ctx -> {
                     var c = require(ctx.getSource());
@@ -60,7 +94,9 @@ public final class MobRealms implements ModInitializer {
                     if (c.state().camps().size() < 2) message(ctx.getSource(), "no_relations");
                     return 1;
                 }))
-                .then(Commands.literal("simulate").then(Commands.argument("days", IntegerArgumentType.integer(1, 7)).executes(ctx -> {
+                .then(Commands.literal("simulate").then(Commands.literal("cancel").executes(ctx -> {
+                    message(ctx.getSource(), "cancelled", require(ctx.getSource()).cancelDays()); return 1;
+                })).then(Commands.argument("days", IntegerArgumentType.integer(1, dev.mobrealms.core.RealmSimulation.MAX_PENDING_DAYS)).executes(ctx -> {
                     int days = IntegerArgumentType.getInteger(ctx, "days");
                     boolean ok = require(ctx.getSource()).enqueueDays(days);
                     message(ctx.getSource(), ok ? "queued" : "busy", days); return ok ? 1 : 0;

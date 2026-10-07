@@ -29,10 +29,13 @@ public final class RealmSimulation {
         CitizenView view() { return new CitizenView(id, camp, mode, generation, diligence, cargo.snapshot()); }
     }
     private final LinkedHashMap<UUID, Camp> camps = new LinkedHashMap<>();
-    private final LinkedHashMap<UUID, Citizen> citizens = new LinkedHashMap<>();
+    private final NavigableMap<UUID, Citizen> citizens = new TreeMap<>();
     private final Map<UUID, Stockpile> stores = new HashMap<>();
     private final Set<ChunkKey> protectedChunks = new HashSet<>();
     private final int maxCamps, maxPopulation, maxDetailed;
+    public static final int MAX_PENDING_DAYS = 365;
+    private int pendingDays;
+    private UUID dayCursor;
     private long day;
     private long observedWorldDay = -1;
     public RealmSimulation(int maxCamps, int maxPopulation, int maxDetailed) {
@@ -44,6 +47,37 @@ public final class RealmSimulation {
     public int maxPopulation() { return maxPopulation; }
     public int maxDetailed() { return maxDetailed; }
     public long day() { return day; }
+    public int pendingDays() { return pendingDays; }
+    UUID dayCursor() { return dayCursor; }
+    public boolean enqueueDays(int days) {
+        if (days < 1 || days > MAX_PENDING_DAYS - pendingDays) return false;
+        pendingDays += days; return true;
+    }
+    /** Cancellation preserves completed transfers, but does not count an unfinished day. */
+    public int cancelDays() { int old = pendingDays; pendingDays = 0; dayCursor = null; return old; }
+    void restoreQueue(int pending, UUID cursor) {
+        if (pending < 0 || pending > MAX_PENDING_DAYS || (pending == 0 && cursor != null))
+            throw new IllegalArgumentException("Invalid day queue");
+        pendingDays = pending; dayCursor = cursor;
+    }
+    /** One bounded slice of one day. No entity list copy; dead citizens may disappear between slices.
+     * Citizens added behind the cursor join the next day. Detailed citizens retain physical ownership.
+     */
+    public boolean processDaySlice(int maxCitizens) {
+        if (maxCitizens < 1) throw new IllegalArgumentException("slice size");
+        if (pendingDays == 0) return false;
+        long nextDay = Math.incrementExact(day);
+        for (int i = 0; i < maxCitizens; i++) {
+            var entry = dayCursor == null ? citizens.firstEntry() : citizens.higherEntry(dayCursor);
+            if (entry == null) {
+                day = nextDay; pendingDays--; dayCursor = null; return true;
+            }
+            Citizen c = entry.getValue();
+            if (c.mode == Mode.ABSTRACT) deliver(c);
+            dayCursor = entry.getKey();
+        }
+        return false;
+    }
     public long observedWorldDay() { return observedWorldDay; }
     public int observeWorldDay(long worldDay, int cap) {
         if (worldDay < 0 || cap < 0) throw new IllegalArgumentException("world day/cap");
@@ -112,6 +146,7 @@ public final class RealmSimulation {
     }
     /** Only absent citizens deliver existing cargo; no new resources are created. */
     public void advanceDay() {
+        if (pendingDays != 0) throw new IllegalStateException("Queued simulation in progress");
         long next = Math.incrementExact(day);
         for (Citizen c : citizens.values()) if (c.mode == Mode.ABSTRACT) deliver(c);
         day = next;

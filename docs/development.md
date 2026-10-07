@@ -29,7 +29,7 @@ python3 scripts/check_resources.py
 ./gradlew runClient
 ```
 
-Mod artifact: `fabric-mod/build/libs/mob-realms-0.1.0-dev.jar`. The core is included in this JAR. Do not install `sim-core` or the sources JAR separately.
+Mod artifact: `fabric-mod/build/libs/mob-realms-0.2.0-dev.jar`. The core is included in this JAR. Do not install `sim-core` or the sources JAR separately.
 
 For a development dedicated server:
 
@@ -77,3 +77,5 @@ Datapack path: `data/<namespace>/mobrealms/species/<name>.json`. Supply the appr
 Its identifier is `<namespace>:<name>`. Add `species.<namespace>.<name>` to your resource-pack language files. Values must be finite/non-negative; carrying capacity is 1–64. The entity type must create a Mob. Existing profiles cannot be removed while camps reference them. Invalid reloads retain the previous profile set and log the problem; valid definitions activate after `/reload`.
 
 M1 still uses a fixed material whitelist and the same starter shelter for all profiles. Completely new behaviors, construction styles and faction templates are later work, not JSON-programmable features of this candidate.
+
+For a user-local installer JDK on Linux x64, use `export JAVA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/mobrealms/jdk-25-x64"` and `export PATH="$JAVA_HOME/bin:$PATH"` before invoking Gradle directly (ARM64: `jdk-25-aarch64`). Installer/upgrade scripts select this JDK themselves.

@@ -8,7 +8,7 @@ import java.util.zip.CRC32;
 
 /** Versioned bounded binary format. No Java object deserialization. */
 public final class RealmStore {
-    private static final int MAGIC = 0x4D524C4D, VERSION = 1, MAX_BYTES = 32 * 1024 * 1024;
+    private static final int MAGIC = 0x4D524C4D, VERSION = 2, MAX_BYTES = 32 * 1024 * 1024;
     private RealmStore() {}
     public static byte[] encode(RealmSimulation state) throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -16,6 +16,9 @@ public final class RealmStore {
             out.writeInt(MAGIC); out.writeInt(VERSION);
             out.writeInt(state.maxCamps()); out.writeInt(state.maxPopulation()); out.writeInt(state.maxDetailed());
             out.writeLong(state.day()); out.writeLong(state.observedWorldDay());
+            out.writeInt(state.pendingDays());
+            out.writeBoolean(state.dayCursor() != null);
+            if (state.dayCursor() != null) uuid(out, state.dayCursor());
             out.writeInt(state.camps().size());
             for (var c : state.camps()) {
                 uuid(out, c.id()); out.writeUTF(c.species()); out.writeUTF(c.territory().dimension());
@@ -44,9 +47,12 @@ public final class RealmStore {
             if (crc.getValue() != checksum.readLong()) throw new IOException("Realm checksum mismatch");
         }
         try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes, 0, bytes.length - 8))) {
-            if (in.readInt() != MAGIC || in.readInt() != VERSION) throw new IOException("Unsupported realm save format");
+            if (in.readInt() != MAGIC) throw new IOException("Unsupported realm save format");
+            int version = in.readInt();
+            if (version < 1 || version > VERSION) throw new IOException("Unsupported realm save format");
             RealmSimulation state = new RealmSimulation(in.readInt(), in.readInt(), in.readInt());
             state.restoreDay(in.readLong()); state.restoreObservedWorldDay(in.readLong());
+            if (version >= 2) state.restoreQueue(in.readInt(), in.readBoolean() ? uuid(in) : null);
             int camps = count(in, state.maxCamps());
             for (int i = 0; i < camps; i++) {
                 UUID id = uuid(in); String species = in.readUTF(), dimension = in.readUTF();

@@ -21,8 +21,8 @@ Minecraft mobs establish camps and gather materials, with a server-side simulati
 - Physical collection of whitelisted dropped materials and internal camp inventories.
 - Abstract delivery of already-carried cargo, without creating resources in unloaded chunks.
 - Versioned, checksummed world saves with a previous-save backup.
-- Server commands for founding, inspection, protection and bounded day simulation.
-- Java 25 CI build and ten dependency-free core test scenarios.
+- Admin GUI (`/civ admin`), natural camp founding and a saved/cancellable queue of up to 365 days.
+- Java 25 CI build and twelve dependency-free core test scenarios.
 
 ## Build
 
@@ -37,7 +37,7 @@ git switch feat/m1-foundation
 ./gradlew runClient
 ```
 
-Development JAR: `fabric-mod/build/libs/mob-realms-0.1.0-dev.jar`. The sources JAR is not an installable mod.
+Development JAR: `fabric-mod/build/libs/mob-realms-0.2.0-dev.jar`. The sources JAR is not an installable mod.
 
 ## Planned
 

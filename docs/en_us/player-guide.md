@@ -35,7 +35,11 @@ Zombies favor gathering; skeletons favor regrouping. Sunlight or very low health
 
 ## Natural founding
 
-After three world days, every 1,200 server ticks there is a 1-in-8 chance of attempting a nearby site. Sites must be suitable, loaded Overworld locations. Terrain can make success rare. Use the founding command for repeatable tests.
+After three world or simulated days, the server schedules up to eight site attempts every 30 seconds, spread across ticks. Completed simulated days also request a search. Overlapping requests coalesce; 365 days do not guarantee 365 camps.
+
+Only loaded Overworld sites 32 to about 136 blocks from players (including spectators) are considered. Sites require a flat, empty 3×3 area over grass blocks, dirt, sand, podzol, mycelium or snow blocks, adequate camp spacing and available population/camp capacity. Protect player land explicitly with `/civ protect`: player-placed natural blocks cannot be distinguished. No chunks are force-loaded. Failed searches retry later.
+
+These are starter civilizations with three new residents, not cities or converted wild mobs. Natural founding remains configurable.
 
 ## Commands
 
@@ -50,15 +54,23 @@ All commands require Minecraft's `COMMANDS_GAMEMASTER` permission (normally oper
 | `/civ found mobrealms:skeleton` | Found a skeleton camp at your position |
 | `/civ protect` | Protect the current chunk from this mod's gathering/founding |
 | `/civ unprotect` | Remove that protection |
-| `/civ simulate <days>` | Queue 1–7 abstract days |
+| `/civ admin` | Admin GUI: camps, simulation, cancellation and protection |
+| `/civ simulate <days>` | Queue 1–365 abstract days |
+| `/civ simulate cancel` | Cancel pending days |
 
 Protection does not block vanilla explosions or player actions. Player buildings are not automatically detected. Gathering respects the camp's claimed chunk and protected chunks.
+
+## Admin GUI
+
+Open `/civ admin`. The native dialog shows camps/coordinates in pages of five, stored item totals, population, elapsed and pending days. Enter 1–365 days and press **Start simulation**. **Refresh** updates the snapshot; it is not a live feed. **Cancel pending days** stops remaining work. **Protect current chunk** protects your location.
+
+Every button runs a normal server command as the clicking player; permissions are checked again. Minecraft may ask for confirmation of privileged commands. The GUI does not pause the simulation. There is no additional GUI library; client-side Mob Realms supplies translations.
 
 ## Background simulation
 
 Unloaded citizens remain associated with saved Minecraft entities through stable IDs. Existing cargo is delivered on the next abstract day. Empty citizens create no resources. Abstract extraction, population growth and warfare are not implemented yet.
 
-`/civ simulate` does not move loaded entities or change Minecraft clocks. The queue holds at most seven days; unexecuted debug days are discarded on restart. Backward world-clock jumps do not repeat daily processing, and forward jumps are capped at seven days.
+`/civ simulate` does not move loaded entities or change Minecraft clocks. The queue holds up to 365 days and persists progress, including the cursor within a day. Each daily task processes at most 32 citizens. Cancellation preserves transfers already completed. Backward world-clock jumps do not repeat daily processing, and forward jumps are capped at seven days.
 
 Offline progress is not implemented. Paused dedicated servers do not advance the simulation.
 
@@ -74,8 +86,10 @@ Offline progress is not implemented. Paused dedicated servers do not advance the
 | `aiInterval` | 20 | Ticks between staggered decisions |
 | `workPerTick` | 8 | Maximum queued tasks executed per tick |
 | `budgetMicros` | 2000 | Queue execution time target |
-| `graceDays` | 3 | World days before natural founding attempts |
+| `graceDays` | 3 | World or simulated days before natural founding attempts |
 | `naturalCamps` | true | Enable natural founding |
+| `naturalIntervalSeconds` | 30 | Seconds between search rounds (5–3600) |
+| `naturalAttempts` | 8 | Site attempts per round (1–64), spread across ticks |
 
 The first three limits are stored with a new simulation; changes currently affect new simulations only. M1 has no growth, so population is at most three citizens per camp. Excess loaded citizens pause detailed AI. The budget covers queue execution, not all vanilla entity work, saves or one-time founding operations.
 
@@ -98,3 +112,15 @@ Back up the whole world before recovery. Entity files and mod state must agree, 
 These gameplay checks have not yet been confirmed as passed. Core tests do not replace them.
 
 [Automated server installation](server-installation.md)
+
+Save format 1 remains readable and upgrades to format 2 on save. Older mod builds cannot read format 2; restore a full world backup before downgrading.
+
+Additional acceptance checks: open `/civ admin`, simulate 30 days, refresh, cancel, test pages and repeat without OP. Test natural camps in open terrain with `graceDays=0` after a restart, including protected land. These gameplay checks remain unconfirmed.
+
+## Visible time-lapse and observer camera
+
+`/civ speed 2` requests 40 TPS; `/civ speed 5` requests 100 TPS. This accelerates real movement, AI and world time for **everyone on the server**. Reset with `/civ speed 1` (20 TPS). Vanilla `/tick rate` permissions still apply, without privilege escalation; actual speed depends on server capacity. The mod does not persist this tick rate.
+
+`/civ observe` explicitly switches you to spectator: fly around the camp or click a mob to follow its camera. Sneak exits the mob camera. Use `/civ observe creative` or `/civ observe survival` to choose your return mode; previous modes are not saved automatically. For conventional third-person view stay in creative and press F5. This is not an automatic orbit camera.
+
+Healthy residents now patrol safe terrain inside their camp chunk at night if there are no gathering targets. Sun-sensitive residents stay sheltered by day; very small islands may lack reachable patrol targets. Patrols create no resources. Test gathering by dropping bones nearby at night. Abstract `/civ simulate 30` is distinct from visible time-lapse; production and city growth remain unimplemented.
