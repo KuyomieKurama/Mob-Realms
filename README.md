@@ -2,7 +2,7 @@
 
 Server-side civilizations for Minecraft Java 26.3: purposeful construction, food and housing, diplomacy, player nations and daily strategy learning.
 
-**0.6.2-dev — M2–M4 development candidate. Interactive client and multiplayer gameplay acceptance remains outstanding.**
+**0.6.3-dev — M2–M4 development candidate. Interactive client and multiplayer gameplay acceptance remains outstanding.**
 
 ## Play and install
 
@@ -37,6 +37,6 @@ git switch feat/m2-m4-realms
 ./gradlew runClient
 ```
 
-Install `fabric-mod/build/libs/mob-realms-0.6.2-dev.jar` and the pinned Fabric API in **both client and server** `mods` folders. Do not install the sources JAR or sim-core separately. The installer provisions Java 25 when necessary; see the installation guide to select that JDK for direct Gradle commands.
+Install `fabric-mod/build/libs/mob-realms-0.6.3-dev.jar` and the pinned Fabric API in **both client and server** `mods` folders. Do not install the sources JAR or sim-core separately. The installer provisions Java 25 when necessary; see the installation guide to select that JDK for direct Gradle commands.
 
 This candidate uses simplified production, chunk-level protection and a territory map without terrain. Physical emissaries, full inter-settlement countries, infection, quests, true siege armies and advanced species behaviors remain future work. Read the guides before upgrading a world.

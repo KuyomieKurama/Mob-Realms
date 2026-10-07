@@ -117,7 +117,7 @@ public final class RealmController {
     public int activeResidents(UUID camp){return (int)leases.keySet().stream().filter(id->state.hasCitizen(id)&&state.citizen(id).camp().equals(camp)).count();}
     public int loadedResidents(UUID camp){return (int)loaded.keySet().stream().filter(id->state.hasCitizen(id)&&state.citizen(id).camp().equals(camp)).count();}
     public void unloadEntity(Entity entity) {
-        UUID id = entity.getUUID(); loaded.remove(id); goals.remove(id);
+        UUID id = entity.getUUID(); loaded.remove(id); goals.remove(id);economy.forget(id);
         var lease = leases.remove(id);
         if (lease != null && state.hasCitizen(id)) state.deactivate(lease);
         if(state.hasCitizen(id))state.markUnloaded(id);allocationDirty=true;
@@ -217,24 +217,36 @@ public final class RealmController {
         economy.recover(mob,camp,new BlockPos(camp.x(),camp.y(),camp.z()));
         double distance = Math.sqrt(mob.distanceToSqr(home.getX() + .5, home.getY(), home.getZ() + .5));
         boolean sunny = level.dimensionType().hasSkyLight() && level.isBrightOutside() && !level.isRaining();
-        if((!sunny || !profile.avoidsSun()) && mob.getHealth() >= mob.getMaxHealth()*.25 && citizen.cargo().isEmpty() && economy.work(mob,level,camp)) { goals.put(mob.getUUID(),UtilityBrain.Goal.IDLE); return; }
+        boolean daylightRest=sunny&&profile.avoidsSun()&&mob.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).isEmpty();
+        boolean needsRest=mob.getHealth()<mob.getMaxHealth()*.25&&(mob.isOnFire()||state.stock(camp.id()).getOrDefault("minecraft:bread",0L)>0);
+        var depot=new BlockPos(camp.x(),camp.y(),camp.z());
+        if(!citizen.cargo().isEmpty()&&mob.distanceToSqr(depot.getX()+.5,depot.getY(),depot.getZ()+.5)<16){
+            state.deliver(leases.get(mob.getUUID()));economy.progress(mob.getUUID());
+        }
+        if(!daylightRest && !needsRest && citizen.cargo().isEmpty() && economy.work(mob,level,camp)) { goals.put(mob.getUUID(),UtilityBrain.Goal.IDLE); return; }
+        economy.releaseResource(mob.getUUID());
         ItemEntity target = null;
-        if (!sunny || !profile.avoidsSun()) {
+        if (!daylightRest) {
             var candidates = level.getEntitiesOfClass(ItemEntity.class, new AABB(home).inflate(12), e -> suitable(e, level) && state.development().town(camp.id()).claims.contains(ChunkKey.fromBlock(dimension(level), e.blockPosition().getX(), e.blockPosition().getZ())));
             target = candidates.stream().min(Comparator.comparingDouble(mob::distanceToSqr)).orElse(null);
         }
-        var goal = brain.choose(profile, new UtilityBrain.Observation(sunny, mob.getHealth() < mob.getMaxHealth() * .25,
+        var goal = brain.choose(profile, new UtilityBrain.Observation(daylightRest, needsRest,
                 !citizen.cargo().isEmpty(), target != null, distance, citizen.diligence()));
         goals.put(mob.getUUID(), goal);
         switch (goal) {
             case SHELTER, REGROUP -> {
-                var refuge=mob.getHealth()<mob.getMaxHealth()*.25?new BlockPos(camp.x(),camp.y(),camp.z()):home;
-                mob.getNavigation().moveTo(refuge.getX()+.5,refuge.getY(),refuge.getZ()+.5,1.0);
+                var refuge=needsRest?depot:home;
+                if(mob.distanceToSqr(refuge.getX()+.5,refuge.getY(),refuge.getZ()+.5)<4&&(!daylightRest||!level.canSeeSky(mob.blockPosition()))){
+                    mob.getNavigation().stop();economy.activity(mob.getUUID(),needsRest?"recover":daylightRest?"rest_day":"idle");
+                }else{
+                    var path=mob.getNavigation().createPath(refuge,0);
+                    if(path!=null&&path.canReach())mob.getNavigation().moveTo(path,1);
+                    else{mob.getNavigation().stop();economy.activity(mob.getUUID(),"shelter_blocked");}
+                }
             }
             case DELIVER -> {
-                var depot=new BlockPos(camp.x(),camp.y(),camp.z());
-                if(mob.distanceToSqr(depot.getX()+.5,depot.getY(),depot.getZ()+.5)<16){state.deliver(leases.get(mob.getUUID()));mob.getNavigation().stop();}
-                else economy.approach(mob,level,depot);
+                if(mob.distanceToSqr(depot.getX()+.5,depot.getY(),depot.getZ()+.5)<16){state.deliver(leases.get(mob.getUUID()));economy.progress(mob.getUUID());mob.getNavigation().stop();}
+                else if(!economy.approach(mob,level,depot))economy.activity(mob.getUUID(),"delivery_blocked");
             }
             case GATHER -> {
                 if (target == null) break;

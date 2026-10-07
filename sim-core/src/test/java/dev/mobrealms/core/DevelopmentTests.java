@@ -13,8 +13,40 @@ public final class DevelopmentTests {
     private static void check(boolean c,String why){if(!c)throw new AssertionError(why);}
     private static void next(RealmSimulation s){s.advanceDay();s.development().daily(s,A,.2,1,2);}
     public static void main(String[] args)throws Exception{
-        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();identities();socialRanks();legacyNames();fairDetail();waitingCargo();basicSkills();admission();
-        System.out.println("Passed 17 civilization scenarios.");
+        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();identities();socialRanks();legacyNames();fairDetail();waitingCargo();basicSkills();admission();resourceCoverage();workTimeouts();materialAlternatives();
+        System.out.println("Passed 20 civilization scenarios.");
+    }
+    private static void resourceCoverage(){
+        var origin=new ChunkKey("minecraft:overworld",-8,7);var survey=new ResourceSurvey(origin,3,11);
+        Set<ResourceSurvey.Column> visited=new HashSet<>();
+        for(int i=0;i<survey.columnsPerPass();i++){
+            var column=survey.next();check(visited.add(column),"survey repeats columns before covering full radius");
+            check(Math.abs(Math.floorDiv(column.x(),16)-origin.x())<=3&&Math.abs(Math.floorDiv(column.z(),16)-origin.z())<=3,"survey exceeds bounded radius");
+        }
+        check(visited.size()==49*256,"far wilderness omitted");
+        check(visited.contains(new ResourceSurvey.Column((origin.x()+3)*16+5,(origin.z()-2)*16+13)),"resource beyond adjacent claims unreachable to survey");
+        check(visited.contains(survey.next()),"survey failed to repeat for later world changes");
+    }
+    private static void workTimeouts(){
+        var stopped=new WorkProgress(0,20);check(!stopped.expired(199,20)&&stopped.expired(200,20),"stationary goal never expires");
+        var away=new WorkProgress(0,20);check(away.expired(200,40),"movement away mistaken for useful progress");
+        var walking=new WorkProgress(0,60);for(int i=1;i<=8;i++)check(!walking.expired(i*100,60-i*5),"productive long walk timed out");
+        check(walking.expired(1000,20),"blocked walk was not retried after progress stopped");
+        var looping=new WorkProgress(0,100);for(int i=1;i<12;i++)check(!looping.expired(i*100,100-i),"valid progress rejected early");
+        check(looping.expired(1200,80),"goal exceeded absolute lifetime");
+    }
+    private static void materialAlternatives(){
+        var tiles=List.of(new Tile(0,0,0,"minecraft:oak_planks","minecraft:oak_planks"),new Tile(1,0,0,"minecraft:cobblestone","minecraft:cobblestone"));
+        var project=new Project(Building.HOUSE,tiles);
+        check(ProductionNeeds.missing(project,Map.of()).equals(List.of("minecraft:oak_planks","minecraft:cobblestone")),"missing wood blocks parallel stone work");
+        for(String wood:List.of("cherry_log","pale_oak_log","stripped_spruce_log","warped_hyphae","mangrove_wood")){
+            String id="minecraft:"+wood;check(ResourceMaterials.drop(id,"minecraft:oak_planks").equals(id),"valid biome wood ignored");
+            var available=ResourceMaterials.available(Map.of(id,2L));check(available.get("minecraft:oak_planks")==8,"wood processing not accounted");
+            check(ProductionNeeds.missing(project,available).equals(List.of("minecraft:cobblestone")),"workers keep chopping funded wood");
+        }
+        check(ResourceMaterials.drop("minecraft:deepslate","minecraft:cobblestone").equals("minecraft:cobblestone"),"deepslate not usable");
+        check(ResourceMaterials.drop("minecraft:diamond_block","minecraft:cobblestone")==null,"non-resource harvested");
+        check(ResourceMaterials.available(Map.of("minecraft:oak_log",Long.MAX_VALUE,"minecraft:oak_planks",8L)).get("minecraft:oak_planks")==Long.MAX_VALUE,"material equivalence overflowed");
     }
     private static void admission() throws Exception {
         var s=fixture();UUID id=new UUID(0,800);s.credit(A,"minecraft:bread",8);

@@ -46,7 +46,12 @@ public final class RealmDashboard {
             detail.add("stock",new Gson().toJsonTree(s.stock(selected)));var buildings=new JsonObject();for(var b:Building.values())buildings.addProperty(b.name().toLowerCase(Locale.ROOT),t.count(b));detail.add("buildings",buildings);
             var tech=new JsonArray();for(var x:t.technologies)tech.add(x.name().toLowerCase(Locale.ROOT));detail.add("technologies",tech);var weights=new JsonArray();for(double w:t.rewards)weights.add(w);detail.add("weights",weights);
             if(own.isPresent()&&!own.get().equals(selected)){var r=s.development().relation(own.get(),selected);detail.addProperty("relation",r.score);detail.addProperty("treaty",r.treaty.name().toLowerCase(Locale.ROOT));detail.addProperty("offer",r.offer==null?"":r.offer.name().toLowerCase(Locale.ROOT));}else{detail.addProperty("relation",0);detail.addProperty("treaty","neutral");}
-            var people=new JsonArray();for(var citizen:s.residents(selected)){if(people.size()>=256)continue;var p=s.development().person(citizen.id());var j=new JsonObject();j.addProperty("id",citizen.id().toString());j.addProperty("name",p.name);j.addProperty("socialRank",s.development().socialRank(citizen.id(),s));j.addProperty("role",p.role.name().toLowerCase(Locale.ROOT));j.addProperty("rank",p.rank());j.addProperty("xp",p.experience);j.addProperty("goal",c.goal(citizen.id()));people.add(j);}detail.add("people",people);root.add("detail",detail);
+            var people=new JsonArray();for(var citizen:s.residents(selected)){if(people.size()>=256)continue;var p=s.development().person(citizen.id());var j=new JsonObject();j.addProperty("id",citizen.id().toString());j.addProperty("name",p.name);j.addProperty("socialRank",s.development().socialRank(citizen.id(),s));j.addProperty("role",p.role.name().toLowerCase(Locale.ROOT));j.addProperty("rank",p.rank());j.addProperty("xp",p.experience);j.addProperty("goal",c.goal(citizen.id()));
+                if(source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)){
+                    j.addProperty("wanted",c.economy().wanted(citizen.id()));j.addProperty("target",c.economy().target(citizen.id()));
+                    j.addProperty("blockedBy",c.economy().blockedBy(citizen.id()));j.addProperty("retries",c.economy().retries(citizen.id()));j.addProperty("scanned",c.economy().scanned(citizen.id()));j.addProperty("progressAge",c.economy().sinceProgress(citizen.id()));
+                }
+                people.add(j);}detail.add("people",people);root.add("detail",detail);
         }
         ServerPlayNetworking.send(player,new RealmPayload(root.toString()));return 1;
     }

@@ -16,7 +16,7 @@ import urllib.request
 import zipfile
 
 VERSIONS = {"minecraft": "26.3", "loader": "0.19.5", "fabric_api": "0.161.0+26.3",
-            "installer": "1.1.2", "mobrealms": "0.6.2-dev"}
+            "installer": "1.1.2", "mobrealms": "0.6.3-dev"}
 MANIFEST = "mobrealms-install.json"
 MAVEN = "https://maven.fabricmc.net"
 EULA_URL = "https://www.minecraft.net/eula"

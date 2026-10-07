@@ -244,5 +244,19 @@
   "screen.mobrealms.execute": "Ausführen",
   "screen.mobrealms.command_help": "Alle /civ- und /realm-Befehle, z. B. civ simulate 14, civ speed 3, civ found mobrealms:skeleton oder civ unprotect. Rückmeldung im Chat; Serverrechte gelten weiterhin.",
   "commands.mobrealms.teleport_failed": "Keine sichere Landestelle oder Siedlung gefunden.",
-  "event.mobrealms.recruitment": "Wilder Mob angeworben"
+  "event.mobrealms.recruitment": "Wilder Mob angeworben",
+  "goal.mobrealms.processing": "Warte auf Verarbeitung im Lager",
+  "goal.mobrealms.build_blocked": "Bau blockiert – siehe Hindernis",
+  "goal.mobrealms.stocked": "Materialbedarf gedeckt – warte auf Bauauftrag",
+  "goal.mobrealms.excavate": "Lege oberflächennahen Rohstoff frei",
+  "goal.mobrealms.reroute": "Verwerfe unerreichbares Ziel und suche neu",
+  "goal.mobrealms.supply_blocked": "Suchgebiet geprüft – Versorgung weiterhin blockiert",
+  "goal.mobrealms.rest_day": "Im Unterschlupf – warte auf Nacht oder Kopfschutz",
+  "goal.mobrealms.shelter_blocked": "Weg zum Unterschlupf blockiert",
+  "goal.mobrealms.delivery_blocked": "Weg zum Lager blockiert",
+  "obstacle.mobrealms.none": "Kein gemeldeter Blocker",
+  "screen.mobrealms.no_material": "Kein Materialziel",
+  "screen.mobrealms.no_progress": "Noch kein erfasster Erfolg",
+  "screen.mobrealms.progress_age": "Erfolg vor %s s",
+  "screen.mobrealms.work_diagnostic": "%s → %s · %s · Neuversuche %s · %s · Spalten %s"
 }

@@ -1,6 +1,6 @@
-# Playing Mob Realms — 0.6.2-dev
+# Playing Mob Realms — 0.6.3-dev
 
-Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.2-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
+Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.3-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
 
 ## Settlements
 
@@ -96,3 +96,18 @@ Manual acceptance: compare eight loaded settlements across day/night, observe AI
 Active residents near home can admit adult wild mobs of the same species within four blocks and line of sight, when neither is fighting. Admission requires four bread, housing and global population capacity. Named, persistent, tameable, leashed, mounted and already registered entities are excluded. Each town has a one-minute successful-admission cooldown at 20 TPS, reset on server restart. Identity, membership and recruitment log events persist. This is local wild-mob admission, not diplomacy with another civilization.
 
 Manual checks: teleport between towns/dimensions, invalid UUID and non-OP permission denial; run a custom simulation duration from the command field. Near a resident within twelve blocks of home, spawn an unnamed adult matching the town species with housing and four bread available. Allow five seconds per settlement for a scan; check membership, name, bread and log. Repeat with no food, full housing and a named mob: no admission.
+
+
+## Stalled-worker diagnosis (0.6.3)
+
+Operators see preferred material, target coordinates, time since productive work, rejected targets and settlement survey-column count on resident rows. Hover the role/recruit button for the full text. Extraction, delivery, block placement and arrival for farm tending count as work; walking does not. Diagnostics reset on unload/restart.
+
+Workers consider all missing construction materials. Stocked logs count toward plank demand; cherry, pale oak and stripped wood are supported. A shared scan covers 49 chunks within three chunk rings, up to 32 columns per work update, only in loaded terrain. Unclaimed wilderness can supply the town without a claim; protected land, foreign claims, block entities, the camp core and building footprints remain excluded. A completed unsuccessful scan explicitly reports blocked supply and keeps checking for world changes.
+
+Shallow minerals can be exposed through up to four natural soil layers, removed one real block at a time and transported as cargo. Reach and line of sight still apply; this creates real pits and is not a deep mine/staircase system. Targets are reserved between workers. Partial paths are rejected; no approach progress for ten seconds or a total minute causes an extraction retry with a 30-second target cooldown at 20 TPS.
+
+Unprotected undead deliberately shelter by day. The UI distinguishes waiting for night from an unreachable shelter. Head equipment permits daytime work while it lasts. Cargo can be delivered at home during rest. Injured residents without healing food resume work rather than waiting indefinitely for unavailable bread. Farmers gain experience only on arrival at the field, at most once per minute, and help with other jobs between visits. Food remains a daily productive-farm model, not individual wheat harvesting.
+
+`/civ simulate 30` does not run 30 days of physical work or advance daylight. Use `/civ speed 5` to watch physical work in loaded chunks, then restore `/civ speed 1`. A full survey is 12,544 columns shared among available worker updates. Missing resources, unloaded terrain and unsuitable construction ground can still block growth.
+
+Manual acceptance: observe extraction/stock/build progress in existing towns; obstruct one source while leaving another accessible and check retries; test cherry/pale oak and a town missing wood but with other needed materials; verify undead resume at night or with a helmet; block a farmer's route and confirm no walking XP; check protected/foreign territory and restart. No interactive game-world acceptance was performed by the automated build.

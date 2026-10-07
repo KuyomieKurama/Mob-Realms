@@ -1,3 +1,13 @@
+# 0.6.3-dev
+
+- Parallel material deficits, shared bounded wilderness surveys and discovered-source reuse.
+- Cherry/pale oak/stripped wood support and accounting for logs awaiting processing.
+- Reserved resource targets, 30-second rejection cooldowns, actual path reachability and progress timeouts.
+- Shallow soil overburden extraction with real cargo and line-of-sight checks; protected land, foreign claims and settlement footprints remain excluded.
+- Farmer arrival/cooldown checks before experience, useful work between tending visits.
+- Separate sheltered daylight rest, blocked shelter/delivery, processing and exhausted-search goals; operator work diagnostics.
+- Regression coverage for complete search coverage, alternative materials and path progress; save format remains 4.
+
 # 0.6.2-dev
 
 - Operator settlement teleport with bounded landing checks and dimension support.

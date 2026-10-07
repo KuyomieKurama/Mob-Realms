@@ -244,5 +244,19 @@
   "screen.mobrealms.execute": "Execute",
   "screen.mobrealms.command_help": "All /civ and /realm commands, e.g. civ simulate 14, civ speed 3, civ found mobrealms:skeleton or civ unprotect. Feedback appears in chat; server permissions still apply.",
   "commands.mobrealms.teleport_failed": "No safe landing location or settlement found.",
-  "event.mobrealms.recruitment": "Wild mob recruited"
+  "event.mobrealms.recruitment": "Wild mob recruited",
+  "goal.mobrealms.processing": "Waiting for stock processing",
+  "goal.mobrealms.build_blocked": "Construction blocked – check obstacle",
+  "goal.mobrealms.stocked": "Materials stocked – waiting for construction",
+  "goal.mobrealms.excavate": "Expose shallow resource through soil",
+  "goal.mobrealms.reroute": "Reject unreachable target and find another",
+  "goal.mobrealms.supply_blocked": "Survey area checked – supply still blocked",
+  "goal.mobrealms.rest_day": "Sheltered – waiting for night or head protection",
+  "goal.mobrealms.shelter_blocked": "Route to shelter blocked",
+  "goal.mobrealms.delivery_blocked": "Route to stockpile blocked",
+  "obstacle.mobrealms.none": "No reported blocker",
+  "screen.mobrealms.no_material": "No material target",
+  "screen.mobrealms.no_progress": "No recorded work yet",
+  "screen.mobrealms.progress_age": "Success %s s ago",
+  "screen.mobrealms.work_diagnostic": "%s → %s · %s · Retries %s · %s · Columns %s"
 }

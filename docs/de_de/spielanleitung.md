@@ -1,8 +1,8 @@
-# Mob Realms spielen — 0.6.2-dev
+# Mob Realms spielen — 0.6.3-dev
 
 ## Installation und Einstieg
 
-Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.2-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
+Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.3-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
 
 Beginne in einer Testwelt auf Normal. `/realm` öffnet den Reichsatlas. Er zeigt einen Server-Schnappschuss; **Aktualisieren** lädt aktuelle Werte. Gold markiert die gewählte Siedlung, Türkis aktive Entwicklung. Übersicht und Forschung lassen sich mit dem Mausrad scrollen. Die Karte zeigt beanspruchte Chunks der aktuellen Siedlungsseite und Dimension, keine Landschaft.
 
@@ -76,7 +76,7 @@ Die Konfiguration unter `config/mobrealms.properties` enthält Wachstumsdauer, A
 
 Teste zuerst in einer Kopie deiner Welt: Lager bei Wald und ebener Freifläche gründen, Vorräte spenden, Bau bis Feld und Haus beobachten, 30 Tage simulieren, Rollen und Handel prüfen, speichern/neustarten und Baufortschritt vergleichen. Prüfe mit zwei Spielern, dass Verträge Zustimmung benötigen und fremde Rollen nicht geändert werden können. Teste UI bei verschiedenen GUI-Skalierungen und Zeitraffer anschließend wieder auf 1× zurücksetzen.
 
-0.6.2-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
+0.6.3-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
 
 Speicherformat 4 liest alte Formate 1/2/3. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.
 
@@ -139,3 +139,26 @@ Unter **Admin → Welt → Zur Siedlung** teleportierst du dich zur links ausgew
 Aktive Bewohner können wilde erwachsene Mobs derselben Spezies bei einer Begegnung innerhalb von vier Blöcken aufnehmen. Voraussetzungen: Nähe zum Lager (zwölf Blöcke), Sichtkontakt, kein aktuelles Kampfziel, mindestens vier Brot und freier Wohnraum sowie Platz im globalen Bevölkerungslimit. Der Mob behält seine UUID und erhält einen Namen und Zivilisations-KI. Benannte, persistente, gezähmte, angeleinte, berittene und bereits registrierte Mobs sind ausgeschlossen. Pro Lager gilt nach Erfolg eine Minute Pause bei 20 TPS; diese Begegnungspause beginnt nach einem Serverneustart neu. Aufnahme und Identität werden gespeichert, Anwerbungen erscheinen in den Admin-Logs. Dies ist lokale Aufnahme wilder Mobs, keine Diplomatie mit fremden Bewohnern.
 
 Test: Zwei Siedlungen auswählen und jeweils teleportieren; auch Nether-Siedlung und ungültige UUID prüfen. Als Nicht-OP `/civ tp` versuchen. `civ simulate 14` im Befehlsfeld ausführen und Ziele prüfen. Bei einem bewohnten Lager mit Haus und vier Brot einen unbenannten erwachsenen Mob passender Spezies nahe einem aktiven Bewohner spawnen; nach spätestens einer Runde durch alle Siedlungen (fünf Sekunden je Siedlung) Aufnahme, Brotverbrauch, Namen und Log prüfen. Mit vollem Wohnraum, ohne Brot und benanntem Mob wiederholen: keine Aufnahme.
+
+
+## Diagnose für stehenbleibende Bewohner (0.6.3)
+
+Die Bewohneransicht zeigt Operatoren jetzt eine zusätzliche Arbeitszeile: bevorzugtes Material, Zielkoordinaten, Zeit seit letztem Erfolg, verworfene Abbauziele und die Zahl geprüfter Suchspalten der Siedlung. Der Tooltip am Rollen-/Anwerbeknopf zeigt den vollständigen Text auch auf kleinen Bildschirmen. Erfolg bedeutet Abbau, Ablieferung, platzierter Baublock oder tatsächliche Feldpflege; bloßes Laufen zählt nicht. Diese Diagnosezähler beginnen nach Entladen/Neustart neu. Sie sind keine gespeicherte Leistungshistorie.
+
+- **Rohstoffsuche:** Arbeiter können alle noch fehlenden Baumaterialien suchen; fehlendes Holz sperrt Stein und Erde nicht mehr. Bereits eingelagerte Stämme zählen als verarbeitbares Holz. Kirschholz, Blasseiche, entrindetes Holz und Nether-Stämme funktionieren ebenfalls.
+- **Suchgebiet:** gemeinsamer Spaltenscan in 49 Chunks (drei Chunk-Ringe um das Lager), ausschließlich bereits geladene Chunks. Maximal 32 Spalten je Arbeitsupdate. Entdeckte Vorkommen werden wiederverwendet; unbeanspruchtes Umland darf ohne vorherigen Claim genutzt werden. Geschützte Chunks, fremdes Territorium, Block-Entities, der Lagerkern und Gebäudeflächen werden ausgelassen. Nach einem vollständigen Suchdurchlauf heißt das Ziel bei weiterem Misserfolg ausdrücklich „Versorgung weiterhin blockiert“. Die Suche läuft weiter, damit neu geladene Gebiete oder veränderte Rohstoffe gefunden werden.
+- **Abbau:** Oberflächennaher Stein kann durch bis zu vier natürliche Erdschichten freigelegt werden. Jede Schicht wird tatsächlich entfernt und als Fracht transportiert. Reichweite, Sichtlinie und Wegfindung begrenzen dies; es ist noch kein System für tiefe Schächte oder Treppenminen. Es entstehen reale Gruben.
+- **Wegfindung:** Teilpfade zählen nicht als erreichbares Ziel. Nach zehn Sekunden ohne Annäherung oder spätestens einer Minute wird ein Abbauziel verworfen und für 30 Sekunden gemieden (jeweils bei 20 TPS). Andere Arbeiter reservieren nicht denselben Abbaublock. Es gibt weiterhin keine Teleportation von Arbeitern oder erfundene Rohstoffe.
+- **Unterschlupf:** Ungeschützte Zombies/Skelette pausieren tagsüber bewusst. „Im Unterschlupf – warte auf Nacht oder Kopfschutz“ ist daher kein Lernfehler. Ein getragener Kopfschutz erlaubt Tagesarbeit, solange er vorhanden ist. Fracht kann am Lager auch während der Tagesruhe abgeliefert werden. Ein fehlender Weg wird separat angezeigt. Bei Verletzung ohne Heilvorräte versuchen Bewohner wieder Arbeit, statt unbegrenzt auf nicht vorhandenes Brot zu warten.
+- **Bauern:** Erfahrung erst am Feldrand, höchstens einmal je Minute. Zwischen Pflegebesuchen helfen sie bei Versorgung und Bau. Nahrung aus einem aktiven, besetzten Feld wird weiterhin im täglichen Wirtschaftsmodell bilanziert; das ist keine vollständige Simulation jedes Weizenblocks.
+
+`/civ simulate 30` wertet 30 Zivilisationstage aus, führt aber **keine 30 Tage physischer Arbeit** aus und macht aus Mittag keine Nacht. Für sichtbare Entwicklung `/civ speed 5` verwenden und die Siedlungen geladen halten; anschließend `/civ speed 1`. Ein vollständiger Suchdurchlauf umfasst 12.544 Spalten, verteilt über die Arbeiter und deren verfügbare Arbeitsupdates. Grenzen durch fehlende Rohstoffe, ungeladene Chunks oder unpassendes Baugelände bleiben real.
+
+### Abnahme in einer Testwelt
+
+1. Bestehende Welt sichern, Client und Server auf 0.6.3-dev aktualisieren. Eine Creeper-/Illager-Siedlung nahe natürlichem Holz beobachten: Material, Zielkoordinaten, Vorräte und letzter Arbeitserfolg müssen sich ändern; nicht nur die Zielbezeichnung.
+2. Holz hinter einer Wand bzw. unerreichbar oberhalb des Mobs anbieten und einen zweiten erreichbaren Bestand belassen. Neuversuche müssen steigen; das erste Ziel darf nicht sofort erneut gewählt werden.
+3. Lager mit Kirsch- oder Blasseichenholz in Reichweite testen. Zusätzlich ohne erreichbares Holz, aber mit Stein/Erde: andere fehlende Baustoffe müssen gesammelt werden. Ohne jegliche passende Quelle ist eine Blockade korrekt.
+4. Zombies bei Tag und Nacht beobachten, optional Helm ausrüsten. „Warte auf Nacht“ muss bei Nacht enden. Tage vorsimulieren allein ist dafür kein Test.
+5. Einen Bauern vom Feld abtrennen: kein Erfahrungsgewinn durchs bloße Anlaufen. Nach Wiederherstellen des Wegs Pflege und anschließende Mitarbeit beobachten.
+6. Geschützte Chunks und fremde Claims kontrollieren: keine Entnahme. Abbau, Lieferung, Baufortschritt und Neustart prüfen. Der automatisierte Build ersetzt diese Spielprüfung nicht.

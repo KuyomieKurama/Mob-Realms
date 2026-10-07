@@ -85,14 +85,14 @@ public final class RealmScreen extends Screen {
             },false);}
         }
         if(tab==3){
-            JsonArray people=detail().getAsJsonArray("people");int count=Math.max(1,(panelH-160)/40);int start=peoplePage*count;
+            JsonArray people=detail().getAsJsonArray("people");int count=Math.max(1,(panelH-160)/(data.get("admin").getAsBoolean()?56:40));int start=peoplePage*count;
             if(start>=people.size()){peoplePage=0;start=0;}
             for(int i=start;i<Math.min(start+count,people.size());i++){
-                var person=people.get(i).getAsJsonObject();String citizen=str(person,"id");int row=top+77+(i-start)*40;
+                var person=people.get(i).getAsJsonObject();String citizen=str(person,"id");int row=top+77+(i-start)*(data.get("admin").getAsBoolean()?56:40);
                 if(str(data,"own").equals(id)){
                     String[] roles={"gatherer","miner","builder","farmer","guard","soldier","trader","leader"};int current=Arrays.asList(roles).indexOf(str(person,"role"));String next=roles[(current+1)%roles.length];
-                    button(mainX+mainW-88,row,88,"assign",()->action("role "+citizen+" "+next),false).setTooltip(net.minecraft.client.gui.components.Tooltip.create(tr("resident_detail",str(person,"name"),name("rank",str(person,"socialRank")),name("role",str(person,"role")),number(person,"rank"),citizen)));
-                }else button(mainX+mainW-88,row,88,"recruit",()->action("recruit "+citizen),false).setTooltip(net.minecraft.client.gui.components.Tooltip.create(tr("resident_detail",str(person,"name"),name("rank",str(person,"socialRank")),name("role",str(person,"role")),number(person,"rank"),citizen)));
+                    button(mainX+mainW-88,row,88,"assign",()->action("role "+citizen+" "+next),false).setTooltip(net.minecraft.client.gui.components.Tooltip.create(residentTooltip(person,citizen)));
+                }else button(mainX+mainW-88,row,88,"recruit",()->action("recruit "+citizen),false).setTooltip(net.minecraft.client.gui.components.Tooltip.create(residentTooltip(person,citizen)));
             }
             button(mainX,y,80,"prev",()->{peoplePage=Math.max(0,peoplePage-1);rebuildWidgets();},false).active=peoplePage>0;
             button(mainX+85,y,80,"next",()->{peoplePage++;rebuildWidgets();},false).active=(peoplePage+1)*count<people.size();
@@ -218,13 +218,26 @@ public final class RealmScreen extends Screen {
         text(g,tr("map_help"),mainX,top+panelH-94,MUTED);
     }
     private void people(GuiGraphicsExtractor g,JsonObject d){
-        int count=Math.max(1,(panelH-160)/40),start=peoplePage*count;var people=d.getAsJsonArray("people");
+        int count=Math.max(1,(panelH-160)/(data.get("admin").getAsBoolean()?56:40)),start=peoplePage*count;var people=d.getAsJsonArray("people");
         for(int i=start;i<Math.min(start+count,people.size());i++){
-            var p=people.get(i).getAsJsonObject();int y=top+77+(i-start)*40;
+            var p=people.get(i).getAsJsonObject();int y=top+77+(i-start)*(data.get("admin").getAsBoolean()?56:40);
             var label=tr("named_citizen",str(p,"name"),name("rank",str(p,"socialRank")));
             g.text(font,font.plainSubstrByWidth(label.getString(),Math.max(10,mainW-96)),mainX,y,PAPER,false);
-            g.text(font,font.plainSubstrByWidth(tr("citizen_work",name("role",str(p,"role")),number(p,"rank"),Component.translatable("goal.mobrealms."+str(p,"goal"))).getString(),Math.max(10,mainW-96)),mainX,y+15,MUTED,false);rule(g,y+34);
+            g.text(font,font.plainSubstrByWidth(tr("citizen_work",name("role",str(p,"role")),number(p,"rank"),Component.translatable("goal.mobrealms."+str(p,"goal"))).getString(),Math.max(10,mainW-96)),mainX,y+15,MUTED,false);
+            if(data.get("admin").getAsBoolean()){
+                var diagnostic=workDiagnostic(p);
+                g.text(font,font.plainSubstrByWidth(diagnostic.getString(),mainW),mainX,y+30,TEAL,false);rule(g,y+49);
+            }else rule(g,y+34);
         }
+    }
+    private Component workDiagnostic(JsonObject p){
+        String material=str(p,"wanted");var materialName=material.isEmpty()?tr("no_material"):new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(material))).getHoverName();
+        var age=number(p,"progressAge")<0?tr("no_progress"):tr("progress_age",number(p,"progressAge"));
+        return tr("work_diagnostic",materialName,str(p,"target"),age,number(p,"retries"),name("obstacle",str(p,"blockedBy")),number(p,"scanned"));
+    }
+    private Component residentTooltip(JsonObject person,String citizen){
+        var label=tr("resident_detail",str(person,"name"),name("rank",str(person,"socialRank")),name("role",str(person,"role")),number(person,"rank"),citizen).copy();
+        if(person.has("wanted"))label.append("\n").append(workDiagnostic(person));return label;
     }
     private void research(GuiGraphicsExtractor g,JsonObject d){
         text(g,tr("strategy",name("strategy",str(d,"strategy"))),mainX,top+76,GOLD);
