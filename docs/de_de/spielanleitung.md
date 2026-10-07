@@ -79,3 +79,13 @@ Teste zuerst in einer Kopie deiner Welt: Lager bei Wald und ebener Freifläche g
 0.5.0-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
 
 Speicherformat 3 liest alte Formate 1/2. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.
+
+## Bevölkerungsverluste und Admin-Ansicht
+
+Bestätigte Todesfälle entfernen einen Bewohner sofort und genau einmal. Sein Wohnplatz wird frei, ungetragenes Lagergut bleibt erhalten, seine nicht abgelieferte Fracht geht verloren. Das Entladen eines Chunks zählt nicht als Tod. Verluste setzen den Wachstumsfortschritt zurück; am betroffenen Simulationstag entstehen keine neuen Bewohner. Mit mindestens zwei Überlebenden, Nahrung und Wohnraum kann sich die Bevölkerung danach erholen. Eine ausgestorbene Siedlung vermehrt sich nicht von selbst.
+
+Nachwuchs wird gespeichert, bevor er in der Welt erscheint. Fehlt ein kollisionsfreier Platz beim Lager, bleibt er wartend und wird später erneut platziert. Wartende Bewohner zählen bereits zur Bevölkerung und zum Wohnraumbedarf. Die Übersicht zeigt Geburten seit Gründung, Verluste seit dem letzten Tagesbericht, versorgte Tage und den Wachstumsengpass.
+
+Der eigene Admin-Tab bietet Simulation in 1/7/30/365 Tagen und Abbruch der Warteschlange. Unter Welt & Kamera stehen Zeitraffer, Zuschauermodus, Rückkehr und Chunk-Schutz. Ohne Adminrechte fehlt dieser Tab; Befehle prüfen die Rechte erneut. Alle Ansichten aktualisieren sich alle fünf Sekunden. Bei kleinen GUI-Skalierungen wechseln Pfeile zwischen Tabs.
+
+Abnahmetest: einen Bewohner töten, Population und Verluste prüfen; Chunk entladen/laden (keinen weiteren Verlust erwarten); mit zwei Bewohnern und ausreichend Wohnraum/Nahrung mehrere Tage simulieren, neu starten und sicherstellen, dass jedes neue Mitglied nur einmal erscheint.

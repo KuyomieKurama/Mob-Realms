@@ -43,3 +43,13 @@ Test a copy of your world: establish a camp near wood and flat ground; donate su
 This is a development candidate, not a gameplay-validated release. Automated tests do not validate navigation, combat, rendering or multiplayer behavior. Each settlement is one polity; multi-city countries, automatic repairs, roads, full underground mines, dynamic technology trees and quests are not implemented. Terrain/resource scarcity can halt development; the atlas reports why.
 
 Save format 3 reads formats 1/2. Downgrading requires restoring a full world backup. The stopped-server upgrader creates one; update the client JAR too.
+
+## Deaths, births and administration
+
+Confirmed deaths immediately remove a resident exactly once, release housing and reset growth progress. Undelivered cargo is lost; stored goods remain. Chunk unloading is not a death. No birth occurs on a loss-report day; at least two survivors, food and housing allow later recovery. Extinct settlements do not reproduce spontaneously.
+
+Pending births persist across restarts and wait for a collision-free location near camp. They already count toward population and housing. Overview displays cumulative births, losses since the last daily report, fed days and the current growth blocker.
+
+A separate Admin tab contains 1/7/30/365-day simulation presets and queue cancellation. World & camera contains time-lapse, spectator/return controls and chunk protection. Permissions remain server-enforced. Screens refresh every five seconds; narrow layouts use arrows to navigate tabs.
+
+Acceptance: kill one resident and verify population/losses; unload/reload without another loss; supply food/housing to two survivors, simulate days and restart, checking that each pending resident appears only once.

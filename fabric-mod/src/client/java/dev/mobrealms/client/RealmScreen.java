@@ -12,13 +12,21 @@ import java.util.*;
 /** Responsive, paginated realm atlas. All numbers are server snapshots, never authoritative client state. */
 public final class RealmScreen extends Screen {
     private JsonObject data;
-    private int tab,peoplePage,scroll;
+    private int tab,peoplePage,scroll,refreshTicks,adminPage;
     private int left,top,panelW,panelH,mainX,mainW;
     private String confirm;
     private static final int GOLD=0xffe5bd7c,INK=0xff101920,PAPER=0xffe9e2d2,MUTED=0xff9caeb7,TEAL=0xff6ec9b6;
-    private static final String[] TABS={"overview","map","diplomacy","people","research"};
-    public RealmScreen(JsonObject data){super(Component.translatable("screen.mobrealms.title"));this.data=data;}
-    public void update(JsonObject next){data=next;confirm=null;rebuildWidgets();}
+    private static final String[] TABS={"overview","map","diplomacy","people","research","admin"};
+    public RealmScreen(JsonObject data){super(Component.translatable("screen.mobrealms.title"));this.data=data;if(data.has("focusAdmin")&&data.get("focusAdmin").getAsBoolean())tab=5;}
+    public void update(JsonObject next){
+        if(!str(data,"selected").equals(str(next,"selected"))){confirm=null;peoplePage=0;scroll=0;}
+        data=next;rebuildWidgets();
+    }
+    @Override public void tick(){
+        super.tick();if(++refreshTicks>=100){refreshTicks=0;refresh();}
+    }
+    private void refresh(){send(str(data,"selected").isEmpty()?"realm":"realm view "+str(data,"selected"));}
+    private void selectTab(int next){tab=next;peoplePage=0;scroll=0;confirm=null;rebuildWidgets();}
     private Component tr(String key,Object... args){return Component.translatable("screen.mobrealms."+key,args);}
     private Component name(String category,String value){return Component.translatable(category+".mobrealms."+value);}
     private String str(JsonObject j,String key){return j.has(key)?j.get(key).getAsString():"";}
@@ -26,22 +34,34 @@ public final class RealmScreen extends Screen {
     private JsonObject detail(){return data.has("detail")?data.getAsJsonObject("detail"):new JsonObject();}
     private void send(String command){if(minecraft.getConnection()!=null)minecraft.getConnection().sendCommand(command);}
     private void action(String command){send("realm action "+command);}
-    private void button(int x,int y,int w,String label,Runnable work,boolean selected){addRenderableWidget(new RealmButton(x,y,w,19,tr(label),work,selected));}
+    private RealmButton button(int x,int y,int w,String label,Runnable work,boolean selected){
+        var b=new RealmButton(x,y,w,19,tr(label),work,selected);
+        b.setTooltip(net.minecraft.client.gui.components.Tooltip.create(tr(label)));
+        return addRenderableWidget(b);
+    }
     @Override protected void init(){
         panelW=Math.min(860,width-16);panelH=Math.min(510,height-16);left=(width-panelW)/2;top=(height-panelH)/2;
         int sidebar=panelW<480?90:126;mainX=left+sidebar+16;mainW=panelW-sidebar-30;
-        int tabW=Math.max(32,(mainW-8)/5);
-        for(int i=0;i<TABS.length;i++){final int n=i;button(mainX+i*tabW,top+40,tabW-3,TABS[i],()->{tab=n;peoplePage=0;scroll=0;confirm=null;rebuildWidgets();},tab==i);}
+        int tabs=data.get("admin").getAsBoolean()?6:5;if(tab>=tabs)tab=0;
+        if(mainW<360){
+            button(mainX,top+40,24,"prev",()->selectTab(Math.floorMod(tab-1,tabs)),false);
+            button(mainX+27,top+40,mainW-54,TABS[tab],()->{},true);
+            button(mainX+mainW-24,top+40,24,"next",()->selectTab((tab+1)%tabs),false);
+        }else{
+            int tabW=mainW/tabs;
+            for(int i=0;i<tabs;i++){final int n=i;button(mainX+i*tabW,top+40,tabW-3,TABS[i],()->selectTab(n),tab==i);}
+        }
         JsonArray towns=data.getAsJsonArray("towns");int visible=8;int townRow=Math.max(12,Math.min(26,(panelH-140)/8));
         for(int i=0;i<Math.min(visible,towns.size());i++){
             var town=towns.get(i).getAsJsonObject();String id=str(town,"id");
             String species=str(town,"species").replace(':','.');
             addRenderableWidget(new RealmButton(left+10,top+67+i*townRow,sidebar-6,townRow-2,Component.translatable("species."+species),()->send("realm view "+id),id.equals(str(data,"selected"))));
         }
-        button(left+10,top+panelH-62,(sidebar-10)/2,"prev",()->send("realm page "+Math.max(0,number(data,"page")-1)),false);
-        button(left+12+(sidebar-10)/2,top+panelH-62,(sidebar-10)/2,"next",()->send("realm page "+Math.min(number(data,"pages")-1,number(data,"page")+1)),false);
+        button(left+10,top+panelH-62,(sidebar-10)/2,"prev",()->send("realm page "+Math.max(0,number(data,"page")-1)),false).active=number(data,"page")>0;
+        button(left+12+(sidebar-10)/2,top+panelH-62,(sidebar-10)/2,"next",()->send("realm page "+Math.min(number(data,"pages")-1,number(data,"page")+1)),false).active=number(data,"page")+1<number(data,"pages");
         button(left+10,top+panelH-37,sidebar-6,"refresh",()->send(str(data,"selected").isEmpty()?"realm":"realm view "+str(data,"selected")),false);
         button(left+panelW-57,top+12,45,"close",this::onClose,false);
+        if(tab==5){adminControls();return;}
         if(str(data,"selected").isEmpty())return;
         int y=top+panelH-60;String id=str(data,"selected");
         if(confirm!=null){
@@ -52,13 +72,7 @@ public final class RealmScreen extends Screen {
         if(tab==0){
             button(mainX,y,Math.min(140,mainW/2-4),"donate",()->action("donate "+id),false);
             if(str(data,"own").equals(id))button(mainX+mainW/2,y,mainW/2,"claim",()->action("claim "+id),false);
-            if(data.get("admin").getAsBoolean()){
-                int w=Math.max(30,(mainW-9)/4);
-                button(mainX,y+23,w,"days",()->send("civ simulate 30"),false);
-                button(mainX+w+3,y+23,w,"speed",()->{confirm="speed";rebuildWidgets();},false);
-                button(mainX+(w+3)*2,y+23,w,"normal",()->send("civ speed 1"),false);
-                button(mainX+(w+3)*3,y+23,w,"observe",()->{send("civ observe");onClose();},false);
-            }
+
         }
         if(tab==2){
             String[] acts={"gift","buy","barter","trade","non_aggression","alliance","neutral","war","vassal","accept","decline"};
@@ -72,16 +86,40 @@ public final class RealmScreen extends Screen {
             JsonArray people=detail().getAsJsonArray("people");int count=Math.max(1,(panelH-160)/40);int start=peoplePage*count;
             if(start>=people.size()){peoplePage=0;start=0;}
             for(int i=start;i<Math.min(start+count,people.size());i++){
-                var person=people.get(i).getAsJsonObject();String citizen=str(person,"id");int row=top+99+(i-start)*40;
+                var person=people.get(i).getAsJsonObject();String citizen=str(person,"id");int row=top+77+(i-start)*40;
                 if(str(data,"own").equals(id)){
                     String[] roles={"gatherer","miner","builder","farmer","guard","soldier","trader","leader"};int current=Arrays.asList(roles).indexOf(str(person,"role"));String next=roles[(current+1)%roles.length];
                     button(mainX+mainW-88,row,88,"assign",()->action("role "+citizen+" "+next),false);
                 }else button(mainX+mainW-88,row,88,"recruit",()->action("recruit "+citizen),false);
             }
-            button(mainX,y,80,"prev",()->{peoplePage=Math.max(0,peoplePage-1);rebuildWidgets();},false);
-            button(mainX+85,y,80,"next",()->{peoplePage++;rebuildWidgets();},false);
+            button(mainX,y,80,"prev",()->{peoplePage=Math.max(0,peoplePage-1);rebuildWidgets();},false).active=peoplePage>0;
+            button(mainX+85,y,80,"next",()->{peoplePage++;rebuildWidgets();},false).active=(peoplePage+1)*count<people.size();
         }
 
+    }
+    private void adminControls(){
+        if(confirm!=null){
+            button(mainX,top+114,mainW,"confirm",()->{send("civ speed 5");confirm=null;rebuildWidgets();},true);
+            button(mainX,top+139,mainW,"cancel",()->{confirm=null;rebuildWidgets();},false);return;
+        }
+        int w=(mainW-6)/2;
+        button(mainX,top+75,w,"simulation",()->{adminPage=0;rebuildWidgets();},adminPage==0);
+        button(mainX+w+6,top+75,w,"world",()->{adminPage=1;rebuildWidgets();},adminPage==1);
+        if(adminPage==0){
+            int[] days={1,7,30,365};
+            for(int i=0;i<days.length;i++){int n=days[i];
+                button(mainX+(i%2)*(w+6),top+122+(i/2)*24,w,"days_"+n,()->send("civ simulate "+n),false).active=number(data,"queued")+n<=365;
+            }
+            button(mainX,top+170,w,"cancel_queue",()->send("civ simulate cancel"),false).active=number(data,"queued")>0;
+            button(mainX+w+6,top+170,w,"refresh",this::refresh,false);
+        }else{
+            button(mainX,top+122,w,"normal",()->send("civ speed 1"),false);
+            button(mainX+w+6,top+122,w,"speed",()->{confirm="speed";rebuildWidgets();},false);
+            button(mainX,top+146,w,"observe",()->{send("civ observe");onClose();},false);
+            button(mainX+w+6,top+146,w,"survival",()->{send("civ observe survival");onClose();},false);
+            button(mainX,top+170,w,"protect",()->send("civ protect"),false);
+            button(mainX+w+6,top+170,w,"creative",()->{send("civ observe creative");onClose();},false);
+        }
     }
     private void text(GuiGraphicsExtractor g,Component value,int x,int y,int color){g.text(font,font.plainSubstrByWidth(value.getString(),mainW),x,y,color,false);}
     private void rule(GuiGraphicsExtractor g,int y){g.fill(mainX,y,mainX+mainW,y+1,0xff34434d);}
@@ -89,12 +127,13 @@ public final class RealmScreen extends Screen {
         g.fill(0,0,width,height,0xb5081016);
         g.fillGradient(left,top,left+panelW,top+panelH,0xff202e38,INK);g.outline(left,top,panelW,panelH,0xff8c7751);
         g.fill(left,top,left+panelW,top+2,GOLD);g.fill(left+8,top+39,mainX-10,top+panelH-8,0xff131e27);
-        g.text(font,tr("title"),left+13,top+13,GOLD,false);
-        g.text(font,tr("day",number(data,"day"),number(data,"queued")),mainX,top+18,MUTED,false);
+        g.text(font,font.plainSubstrByWidth(tr("title").getString(),panelW-78),left+13,top+10,GOLD,false);
+        g.text(font,font.plainSubstrByWidth(tr("day",number(data,"day"),number(data,"queued")).getString(),panelW-78),left+13,top+25,MUTED,false);
         var d=detail();
-        g.enableScissor(mainX,top+64,mainX+mainW,top+panelH-66);
+        g.enableScissor(mainX,top+64,mainX+mainW,top+panelH-(tab==5?10:66));
         if(confirm==null&&(tab==0||tab==4)){g.pose().pushMatrix();g.pose().translate(0,-scroll);}
         if(confirm!=null)g.textWithWordWrap(font,tr("confirm_"+confirm),mainX,top+76,mainW,GOLD);
+        else if(tab==5){text(g,tr("admin_status",number(data,"queued")),mainX,top+101,TEAL);g.textWithWordWrap(font,tr(adminPage==0?"admin_help":"world_help"),mainX,top+199,mainW,MUTED);}
         else if(!data.has("detail"))g.textWithWordWrap(font,tr("empty"),mainX,top+84,mainW,PAPER);
         else switch(tab){
             case 0->overview(g,d);
@@ -110,14 +149,19 @@ public final class RealmScreen extends Screen {
     private void overview(GuiGraphicsExtractor g,JsonObject d){
         text(g,Component.translatable("species."+str(d,"species").replace(':','.')),mainX,top+74,GOLD);
         text(g,tr("population",number(d,"population"),number(d,"housing")),mainX,top+93,PAPER);
-        text(g,tr("objective",name("building",str(d,"objective"))),mainX,top+114,TEAL);
+        text(g,tr("vital",number(d,"births"),number(d,"losses")),mainX,top+113,MUTED);
+        text(g,name("growth",str(d,"growth")),mainX,top+132,TEAL);
+        text(g,tr("growth_days",number(d,"foodDays"),number(d,"growthDays")),mainX,top+151,PAPER);
+        text(g,tr("pending_births",number(d,"pendingBirths")),mainX,top+170,MUTED);
+        rule(g,top+185);
+        text(g,tr("objective",name("building",str(d,"objective"))),mainX,top+195,TEAL);
         int progress=number(d,"progress"),total=Math.max(1,number(d,"total"));
-        g.fill(mainX,top+131,mainX+mainW,top+137,0xff0b1218);g.fill(mainX,top+131,mainX+(int)((long)mainW*progress/total),top+137,TEAL);
-        text(g,tr("progress",progress,total),mainX,top+143,MUTED);
-        text(g,name("obstacle",str(d,"obstacle")),mainX,top+159,GOLD);rule(g,top+176);
+        g.fill(mainX,top+213,mainX+mainW,top+219,0xff0b1218);g.fill(mainX,top+213,mainX+(int)((long)mainW*progress/total),top+219,TEAL);
+        text(g,tr("physical_progress",number(d,"placed"),progress,total),mainX,top+226,MUTED);
+        text(g,name("obstacle",str(d,"obstacle")),mainX,top+243,GOLD);rule(g,top+259);
         var stock=d.getAsJsonObject("stock");int columns=Math.max(1,mainW/135),i=0;
         for(var entry:stock.entrySet()){
-            int x=mainX+(i%columns)*(mainW/columns),y=top+187+(i/columns)*24;if(i>=24)break;
+            int x=mainX+(i%columns)*(mainW/columns),y=top+270+(i/columns)*24;if(i>=24)break;
             var item=BuiltInRegistries.ITEM.getValue(Identifier.parse(entry.getKey()));g.item(new ItemStack(item),x,y-4);
             g.text(font,font.plainSubstrByWidth(item.getName(new ItemStack(item)).getString(),mainW/columns-54),x+20,y,PAPER,false);
             g.text(font,entry.getValue().getAsString(),x+mainW/columns-32,y,TEAL,false);i++;
@@ -138,8 +182,9 @@ public final class RealmScreen extends Screen {
         int count=Math.max(1,(panelH-160)/40),start=peoplePage*count;var people=d.getAsJsonArray("people");
         for(int i=start;i<Math.min(start+count,people.size());i++){
             var p=people.get(i).getAsJsonObject();int y=top+77+(i-start)*40;
-            text(g,tr("citizen",str(p,"id").substring(0,8),name("role",str(p,"role")),number(p,"rank")),mainX,y,PAPER);
-            text(g,Component.translatable("goal.mobrealms."+str(p,"goal")),mainX,y+15,MUTED);rule(g,y+34);
+            var label=tr("citizen",str(p,"id").substring(0,8),name("role",str(p,"role")),number(p,"rank"));
+            g.text(font,font.plainSubstrByWidth(label.getString(),Math.max(10,mainW-96)),mainX,y,PAPER,false);
+            g.text(font,font.plainSubstrByWidth(Component.translatable("goal.mobrealms."+str(p,"goal")).getString(),Math.max(10,mainW-96)),mainX,y+15,MUTED,false);rule(g,y+34);
         }
     }
     private void research(GuiGraphicsExtractor g,JsonObject d){
@@ -151,6 +196,6 @@ public final class RealmScreen extends Screen {
         for(int i=0;i<3;i++){int y=top+302+i*28;double score=weights.get(i).getAsDouble();text(g,name("strategy",strategies[i]),mainX,y,MUTED);g.fill(mainX,y+13,mainX+mainW,y+17,0xff0b1218);g.fill(mainX,y+13,mainX+(int)(mainW*Math.max(0,Math.min(1,(score+1)/2))),y+17,GOLD);}
         text(g,tr("ranged",(int)(d.get("ranged").getAsDouble()*100)),mainX,top+270,MUTED);
     }
-    @Override public boolean mouseScrolled(double x,double y,double horizontal,double vertical){if((tab==0||tab==4)&&x>=mainX){scroll=Math.max(0,Math.min(300,scroll-(int)(vertical*20)));return true;}return super.mouseScrolled(x,y,horizontal,vertical);}
+    @Override public boolean mouseScrolled(double x,double y,double horizontal,double vertical){if((tab==0||tab==4)&&x>=mainX){scroll=Math.max(0,Math.min(650,scroll-(int)(vertical*20)));return true;}return super.mouseScrolled(x,y,horizontal,vertical);}
     @Override public boolean isPauseScreen(){return false;}
 }

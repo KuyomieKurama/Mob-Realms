@@ -71,7 +71,20 @@ public final class EconomyController {
         if(level.getEntity(id)!=null){state.development().person(id).pendingSpawn=false;return;}
         var type=BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(controller.profileFor(id).entityType()));
         var entity=type.create(level,EntitySpawnReason.EVENT);if(!(entity instanceof Mob mob))return;
-        mob.setUUID(id);mob.setPos(camp.x()+.5,camp.y(),camp.z()+.5);mob.setPersistenceRequired();
+        mob.setUUID(id);mob.setPersistenceRequired();
+        boolean clear=false;
+        for(int attempt=0;attempt<16;attempt++){
+            int dx=level.getRandom().nextInt(9)-4,dz=level.getRandom().nextInt(9)-4;
+            var feet=new BlockPos(camp.x()+dx,camp.y(),camp.z()+dz);
+            if(!level.hasChunkAt(feet)||!level.getWorldBorder().isWithinBounds(feet))continue;
+            for(int dy=-2;dy<=2;dy++){
+                var pos=feet.offset(0,dy,0);if(!level.getBlockState(pos.below()).isSolidRender())continue;
+                mob.setPos(pos.getX()+.5,pos.getY(),pos.getZ()+.5);
+                if(level.noCollision(mob)){clear=true;break;}
+            }
+            if(clear)break;
+        }
+        if(!clear){state.development().town(camp.id()).obstacle="spawn";return;}
         if(mob instanceof Piglin piglin)piglin.setImmuneToZombification(true);
         if(level.addFreshEntity(mob)){state.development().person(id).pendingSpawn=false;controller.loadEntity(mob);controller.save();}
     }
@@ -271,7 +284,7 @@ public final class EconomyController {
         return true;
     }
     public void death(Mob mob){
-        if(!state.hasCitizen(mob.getUUID()))return;UUID camp=state.citizen(mob.getUUID()).camp();var town=state.development().town(camp);town.losses++;
+        if(!state.hasCitizen(mob.getUUID()))return;UUID camp=state.citizen(mob.getUUID()).camp();var town=state.development().town(camp);
         var damage=mob.getLastDamageSource();if(damage!=null){
             if(damage.getEntity() instanceof net.minecraft.server.level.ServerPlayer player){town.reputation(player.getUUID(),-25);state.development().nation(player.getUUID()).filter(n->!n.equals(camp)).ifPresent(n->state.development().relation(camp,n).adjust(-25));}if(damage.getDirectEntity() instanceof AbstractArrow)town.rangedHits++;else town.meleeHits++;}
         targets.remove(mob.getUUID());targetStarted.remove(mob.getUUID());surveys.remove(mob.getUUID());activities.remove(mob.getUUID());attacks.remove(mob.getUUID());

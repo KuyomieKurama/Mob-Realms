@@ -49,6 +49,11 @@ public final class MobRealms implements ModInitializer {
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
             var c = controllers.get(level.getServer()); if (c != null) c.loadEntity(entity);
         });
+        net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.AFTER_DEATH.register((entity,source)->{
+            if(entity instanceof net.minecraft.world.entity.Mob mob && entity.level() instanceof net.minecraft.server.level.ServerLevel level){
+                var c=controllers.get(level.getServer());if(c!=null)c.died(mob);
+            }
+        });
         ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
             var c = controllers.get(level.getServer()); if (c != null) c.unloadEntity(entity);
         });
@@ -64,7 +69,7 @@ public final class MobRealms implements ModInitializer {
         });
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> dispatcher.register(
             Commands.literal("civ").requires(s -> s.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
-                .then(Commands.literal("admin").executes(ctx -> RealmDashboard.open(ctx.getSource(), require(ctx.getSource()), null, 0))
+                .then(Commands.literal("admin").executes(ctx -> RealmDashboard.openAdmin(ctx.getSource(), require(ctx.getSource())))
                     .then(Commands.literal("page").then(Commands.argument("page", IntegerArgumentType.integer(0, 204))
                         .executes(ctx -> AdminDialog.open(ctx.getSource(), require(ctx.getSource()), IntegerArgumentType.getInteger(ctx, "page")))))
                     .then(Commands.literal("simulate").then(Commands.argument("days", IntegerArgumentType.integer(1, dev.mobrealms.core.RealmSimulation.MAX_PENDING_DAYS))

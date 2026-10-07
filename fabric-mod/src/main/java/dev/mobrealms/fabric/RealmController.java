@@ -77,6 +77,7 @@ public final class RealmController {
     }
     public void loadEntity(Entity entity) {
         if (!(entity instanceof Mob mob) || !state.hasCitizen(entity.getUUID()) || loaded.containsKey(entity.getUUID())) return;
+        if(mob.isDeadOrDying()){died(mob);return;}
         loaded.put(mob.getUUID(), mob);
         if(mob instanceof SettlerEntity&&!mob.hasCustomName())mob.setCustomName(Component.translatable("name.mobrealms."+Math.floorMod(mob.getUUID().hashCode(),12)));
         var access = (MobGoalsAccess) mob;
@@ -95,7 +96,13 @@ public final class RealmController {
         UUID id = entity.getUUID(); loaded.remove(id); goals.remove(id);
         var lease = leases.remove(id);
         if (lease != null && state.hasCitizen(id)) state.deactivate(lease);
-        if (state.hasCitizen(id) && entity instanceof Mob mob && mob.isDeadOrDying()) { economy.death(mob); state.removeCitizen(id); }
+        if (entity instanceof Mob mob && mob.isDeadOrDying()) died(mob);
+    }
+    public void died(Mob mob) {
+        UUID id=mob.getUUID();if(!state.hasCitizen(id))return;
+        economy.death(mob);state.recordDeath(id);
+        loaded.remove(id);leases.remove(id);goals.remove(id);queued.remove(id);
+        mob.getNavigation().stop();
     }
     public void save() {
         if (!healthy) return;

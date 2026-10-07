@@ -122,6 +122,16 @@ public final class Development {
         chronicle.add(day + ":" + type + ":" + town);
         if (chronicle.size() > 256) chronicle.remove(0);
     }
+    public String growthStatus(RealmSimulation state, UUID id, int growthDays) {
+        Town t=town(id);int population=state.population(id);
+        if(population==0)return "abandoned";
+        if(population<2)return "residents";
+        if(t.starvation>0)return "food";
+        if(population>=t.housing())return "housing";
+        if(state.citizenCount()>=state.maxPopulation())return "limit";
+        if(t.losses>0)return "losses";
+        return t.foodDays>=growthDays?"ready":"waiting";
+    }
     public void daily(RealmSimulation state, UUID id, double learningRate, double ceiling, int growthDays) {
         Town town = town(id); if (town.lastDay >= state.day()) return;
         town.lastDay = state.day(); int population = state.population(id);

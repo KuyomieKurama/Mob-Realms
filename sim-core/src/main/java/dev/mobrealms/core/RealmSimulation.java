@@ -170,6 +170,17 @@ public final class RealmSimulation {
     }
     /** Death destroys undelivered cargo; it must not also be dropped by the adapter. */
     public void removeCitizen(UUID id) { residents.get(required(id).camp).remove(id); citizens.remove(id); development.removePerson(id); }
+    /** Confirmed death is idempotent; chunk unload must never call this method. */
+    public boolean recordDeath(UUID id) {
+        if (!hasCitizen(id)) return false;
+        UUID camp = citizen(id).camp();
+        var town = development.town(camp);
+        town.losses = Math.min(100000, town.losses + 1);
+        town.foodDays = 0;
+        development.event("death", camp, day);
+        removeCitizen(id);
+        return true;
+    }
     void restoreDay(long day) { if (day < 0) throw new IllegalArgumentException("day"); this.day = day; }
     void restoreStock(UUID id, String item, long count) { store(id).add(item, count); }
     void restoreCargo(UUID id, String item, long count) { required(id).cargo.add(item, count); }

@@ -2,6 +2,10 @@
 
 ## 0.5.0-dev — M2–M4 development candidate
 
+- Confirmed deaths immediately and idempotently remove residents, free housing and reset growth progress; chunk unloading does not count as death.
+- Pending births survive restart and wait for a collision-free spawn position; tests cover recovery, extinction and population caps.
+- Dedicated Admin tab with 1/7/30/365-day controls, queue cancellation, time-lapse, camera exits and protection. Automatic five-second refresh, compact tab navigation, disabled invalid page/queue buttons and population/growth diagnostics.
+
 - Follow-up: workers select missing materials across the remaining build order, sweep terrain-height-aware resource columns, abandon stalled targets and approach accessible neighboring positions. Idle workers no longer display stale patrol goals; unsuccessful surveys remain productive tasks rather than patrols.
 
 - Persistent settlement objectives, material-paid construction, food/housing growth, processing and equipment.

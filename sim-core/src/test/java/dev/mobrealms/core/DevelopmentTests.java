@@ -13,8 +13,27 @@ public final class DevelopmentTests {
     private static void check(boolean c,String why){if(!c)throw new AssertionError(why);}
     private static void next(RealmSimulation s){s.advanceDay();s.development().daily(s,A,.2,1,2);}
     public static void main(String[] args)throws Exception{
-        growth();project();trade();diplomacy();learning();save();production();
-        System.out.println("Passed 7 civilization scenarios.");
+        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();
+        System.out.println("Passed 9 civilization scenarios.");
+    }
+    private static void lifecycle()throws Exception{
+        var s=fixture();var t=s.development().town(A);s.credit(A,"minecraft:bread",100);
+        UUID dead=new UUID(0,10);var lease=s.activate(dead);s.collect(lease,"minecraft:oak_log",3,16);
+        check(s.recordDeath(dead),"death ignored");check(!s.recordDeath(dead),"duplicate death accepted");
+        check(s.population(A)==2&&t.losses==1&&t.foodDays==0,"death did not release housing/reset growth");
+        check(s.stock(A).getOrDefault("minecraft:oak_log",0L)==0,"dead cargo delivered");
+        check(s.development().growthStatus(s,A,2).equals("losses"),"loss reason missing");
+        var copy=RealmStore.decode(RealmStore.encode(s));check(!copy.hasCitizen(dead)&&copy.population(A)==2,"dead resident resurrected on restart");
+        next(copy);check(copy.population(A)==2,"birth on loss day");next(copy);check(copy.population(A)==3,"population did not recover with food and housing");
+        long pending=copy.residents(A).stream().filter(c->copy.development().person(c.id()).pendingSpawn).count();check(pending==1,"birth not awaiting spawn");
+        var restarted=RealmStore.decode(RealmStore.encode(copy));check(restarted.residents(A).stream().filter(c->restarted.development().person(c.id()).pendingSpawn).count()==1,"pending birth lost/duplicated on restart");
+        UUID living=restarted.residents(A).iterator().next().id();var active=restarted.activate(living);restarted.deactivate(active);check(restarted.population(A)==3,"chunk unload counted as death");
+        for(var c:List.copyOf(restarted.residents(A)))restarted.recordDeath(c.id());next(restarted);check(restarted.population(A)==0&&restarted.development().growthStatus(restarted,A,2).equals("abandoned"),"extinct town repopulated from nothing");
+    }
+    private static void populationCap(){
+        var s=new RealmSimulation(1,2,2);s.found(new RealmSimulation.Camp(A,"mobrealms:human",new ChunkKey("minecraft:overworld",0,0),8,64,8));
+        s.addCitizen(new UUID(0,10),A,.5);s.addCitizen(new UUID(0,11),A,.5);s.credit(A,"minecraft:bread",20);
+        next(s);next(s);next(s);check(s.population(A)==2&&s.development().growthStatus(s,A,2).equals("limit"),"global population cap ignored");
     }
     private static void production(){
         var tiles=List.of(new Tile(0,0,0,"minecraft:oak_planks","minecraft:oak_planks"),
