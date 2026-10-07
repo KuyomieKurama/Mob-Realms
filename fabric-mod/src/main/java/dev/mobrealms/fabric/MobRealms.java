@@ -65,7 +65,7 @@ public final class MobRealms implements ModInitializer {
                     boolean ok = require(ctx.getSource()).enqueueDays(days);
                     message(ctx.getSource(), ok ? "queued" : "busy", days); return ok ? 1 : 0;
                 })))
-                .then(Commands.literal("found").then(Commands.argument("species", StringArgumentType.word())
+                .then(Commands.literal("found").then(Commands.argument("species", StringArgumentType.greedyString())
                     .suggests((ctx, builder) -> { require(ctx.getSource()).species().forEach(builder::suggest); return builder.buildFuture(); })
                     .executes(ctx -> {
                         var source = ctx.getSource(); var c = require(source); String species = StringArgumentType.getString(ctx, "species");

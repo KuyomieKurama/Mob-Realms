@@ -16,6 +16,7 @@ public final class CoreTests {
         test("save roundtrip invalidates old leases", CoreTests::roundtrip);
         test("corruption rejected; backup retained", CoreTests::persistence);
         test("daily abstraction creates no goods", CoreTests::days);
+        test("clock ignores backward jumps and bounds catch-up", CoreTests::clock);
         test("budget resumes fairly", CoreTests::budget);
         test("utility responds to danger and species", CoreTests::utility);
         System.out.println("Passed " + passed + " core scenarios.");
@@ -87,6 +88,15 @@ public final class CoreTests {
         s.advanceDay(); check(s.stock(CAMP).isEmpty(), "abstract update touched detailed citizen");
         s.deactivate(l); for (int i = 0; i < 100; i++) s.advanceDay();
         check(s.stock(CAMP).get("minecraft:bone") == 2, "abstract update invented resources");
+    }
+    private static void clock() {
+        var s = state();
+        check(s.observeWorldDay(0, 7) == 0, "initial clock");
+        check(s.observeWorldDay(1, 7) == 1, "sunrise");
+        check(s.observeWorldDay(1, 7) == 0, "duplicate sunrise");
+        check(s.observeWorldDay(0, 7) == 0, "backward clock");
+        check(s.observeWorldDay(1000, 7) == 7, "unbounded catch-up");
+        check(s.observeWorldDay(1000, 7) == 0, "repeated catch-up");
     }
     private static void budget() {
         AtomicLong clock = new AtomicLong(); List<Integer> order = new ArrayList<>();

@@ -1,6 +1,7 @@
 package dev.mobrealms.fabric;
 
 import dev.mobrealms.core.*;
+import dev.mobrealms.fabric.mixin.MobGoalsAccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.AABB;
@@ -93,7 +95,7 @@ public final class RealmController {
         if (!healthy) return;
         ticks++;
         if (ticks % 20 == 0) {
-            int passed = state.observeWorldDay(Math.max(0, Math.floorDiv(server.overworld().getDayTime(), 24000L)), 7);
+            int passed = state.observeWorldDay(Math.max(0, Math.floorDiv(server.overworld().getOverworldClockTime(), 24000L)), 7);
             pendingDays = Math.min(7, pendingDays + passed);
         }
         if (pendingDays > 0 && scheduler.submit(() -> state.advanceDay())) pendingDays--;
@@ -110,7 +112,7 @@ public final class RealmController {
         }
         scheduler.run(config.budgetNanos(), config.workPerTick());
         if (config.naturalCamps() && ticks % 1200 == 0 && state.camps().size() < state.maxCamps()
-                && server.overworld().getDayTime() >= config.graceDays() * 24000L) naturalCamp();
+                && server.overworld().getOverworldClockTime() >= config.graceDays() * 24000L) naturalCamp();
     }
     private void update(Mob mob) {
         var citizen = state.citizen(mob.getUUID()); var camp = state.camp(citizen.camp());
@@ -119,7 +121,7 @@ public final class RealmController {
         var profile = definitions.get(camp.species());
         BlockPos home = new BlockPos(camp.x(), camp.y(), camp.z());
         double distance = Math.sqrt(mob.distanceToSqr(home.getX() + .5, home.getY(), home.getZ() + .5));
-        boolean sunny = Math.floorMod(level.getDayTime(), 24000L) < 12000 && level.canSeeSky(mob.blockPosition()) && !level.isRaining();
+        boolean sunny = Math.floorMod(level.getOverworldClockTime(), 24000L) < 12000 && level.canSeeSky(mob.blockPosition()) && !level.isRaining();
         ItemEntity target = null;
         if (!sunny || !profile.avoidsSun()) {
             var candidates = level.getEntitiesOfClass(ItemEntity.class, new AABB(home).inflate(12), e -> suitable(e, level));
@@ -158,7 +160,7 @@ public final class RealmController {
     }
     /** Starter roof and banner are a one-time camp endowment, not a production chain. */
     public boolean found(ServerLevel level, BlockPos origin, String species) {
-        if (!healthy) return false;
+        if (!healthy || !level.dimension().equals(Level.OVERWORLD)) return false;
         SpeciesProfile profile = definitions.get(species);
         ChunkKey chunk = ChunkKey.fromBlock(dimension(level), origin.getX(), origin.getZ());
         if (!state.canFound(chunk) || state.citizens().size() + 3 > state.maxPopulation()) return false;
@@ -187,7 +189,7 @@ public final class RealmController {
         }
         for (var p : roof) level.setBlock(p, Blocks.COBBLESTONE.defaultBlockState(), 3);
         BlockPos marker = origin.offset(1, 0, 1);
-        level.setBlock(marker, (species.endsWith("skeleton") ? Blocks.BLUE_BANNER : Blocks.GREEN_BANNER).defaultBlockState(), 3);
+        level.setBlock(marker, BuiltInRegistries.BLOCK.getValue(Identifier.parse(species.endsWith("skeleton") ? "minecraft:blue_banner" : "minecraft:green_banner")).defaultBlockState(), 3);
         UUID campId = UUID.randomUUID();
         state.found(new RealmSimulation.Camp(campId, species, chunk, origin.getX(), origin.getY(), origin.getZ()));
         for (Mob mob : residents) {

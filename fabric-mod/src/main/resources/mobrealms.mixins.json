@@ -1,1 +1,1 @@
-{"required":true,"package":"dev.mobrealms.fabric","compatibilityLevel":"JAVA_25","mixins":["MobGoalsAccess"],"injectors":{"defaultRequire":1}}
+{"required":true,"package":"dev.mobrealms.fabric.mixin","compatibilityLevel":"JAVA_25","mixins":["MobGoalsAccess"],"injectors":{"defaultRequire":1}}

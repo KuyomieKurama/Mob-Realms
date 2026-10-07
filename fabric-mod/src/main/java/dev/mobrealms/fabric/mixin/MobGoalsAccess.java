@@ -1,4 +1,4 @@
-package dev.mobrealms.fabric;
+package dev.mobrealms.fabric.mixin;
 
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.GoalSelector;
