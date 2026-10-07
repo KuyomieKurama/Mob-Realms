@@ -34,6 +34,7 @@ public final class RealmSimulation {
     private final Set<ChunkKey> protectedChunks = new HashSet<>();
     private final int maxCamps, maxPopulation, maxDetailed;
     private long day;
+    private long observedWorldDay = -1;
     public RealmSimulation(int maxCamps, int maxPopulation, int maxDetailed) {
         if (maxCamps < 1 || maxCamps > 1024 || maxPopulation < 1 || maxPopulation > 100_000
                 || maxDetailed < 1 || maxDetailed > maxPopulation) throw new IllegalArgumentException("limits");
@@ -43,6 +44,18 @@ public final class RealmSimulation {
     public int maxPopulation() { return maxPopulation; }
     public int maxDetailed() { return maxDetailed; }
     public long day() { return day; }
+    public long observedWorldDay() { return observedWorldDay; }
+    public int observeWorldDay(long worldDay, int cap) {
+        if (worldDay < 0 || cap < 0) throw new IllegalArgumentException("world day/cap");
+        if (observedWorldDay < 0) { observedWorldDay = worldDay; return 0; }
+        if (worldDay <= observedWorldDay) return 0;
+        int elapsed = (int) Math.min((long) cap, worldDay - observedWorldDay);
+        observedWorldDay = worldDay;
+        return elapsed;
+    }
+    void restoreObservedWorldDay(long value) {
+        if (value < -1) throw new IllegalArgumentException("world day"); observedWorldDay = value;
+    }
     public List<Camp> camps() { return List.copyOf(camps.values()); }
     public List<CitizenView> citizens() { return citizens.values().stream().map(Citizen::view).toList(); }
     public CitizenView citizen(UUID id) { return required(id).view(); }

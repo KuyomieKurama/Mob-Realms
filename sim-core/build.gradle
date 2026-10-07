@@ -6,4 +6,5 @@ tasks.register('coreTest', JavaExec) {
     mainClass = 'dev.mobrealms.core.CoreTests'
 }
 tasks.named('check') { dependsOn coreTest }
-tasks.named('test') { dependsOn coreTest }
+// This project deliberately uses the executable coreTest harness, not JUnit discovery.
+tasks.named('test') { enabled = false; dependsOn coreTest }

@@ -15,7 +15,7 @@ public final class RealmStore {
         try (DataOutputStream out = new DataOutputStream(bytes)) {
             out.writeInt(MAGIC); out.writeInt(VERSION);
             out.writeInt(state.maxCamps()); out.writeInt(state.maxPopulation()); out.writeInt(state.maxDetailed());
-            out.writeLong(state.day());
+            out.writeLong(state.day()); out.writeLong(state.observedWorldDay());
             out.writeInt(state.camps().size());
             for (var c : state.camps()) {
                 uuid(out, c.id()); out.writeUTF(c.species()); out.writeUTF(c.territory().dimension());
@@ -46,7 +46,7 @@ public final class RealmStore {
         try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes, 0, bytes.length - 8))) {
             if (in.readInt() != MAGIC || in.readInt() != VERSION) throw new IOException("Unsupported realm save format");
             RealmSimulation state = new RealmSimulation(in.readInt(), in.readInt(), in.readInt());
-            state.restoreDay(in.readLong());
+            state.restoreDay(in.readLong()); state.restoreObservedWorldDay(in.readLong());
             int camps = count(in, state.maxCamps());
             for (int i = 0; i < camps; i++) {
                 UUID id = uuid(in); String species = in.readUTF(), dimension = in.readUTF();
