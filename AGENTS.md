@@ -11,3 +11,4 @@ This is a Minecraft 26.3 Fabric mod with a dependency-free simulation core. `sim
 - Do not commit, merge, publish, or restart the live server unless the current user task calls for it.
 
 The shared agent roles and CLI workflow are in `docs/agent-team.md`.
+For structure or settlement-progression work, read the matching project skill in `.agent-team/skills/` before changing code. These repository skills are shared with Claude and Hermes through this guide.

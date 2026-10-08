@@ -4,6 +4,15 @@
 
 All three tools read the shared `AGENTS.md`: Codex reads it directly, Claude reads it through `CLAUDE.md`, and Hermes reads `AGENTS.md` because this repository has no Hermes-specific override. Role prompts live in `.agent-team/roles/`. A run writes prompts, responses, test output, the patch, and `status.json` under `.agent-team/runs/<run-id>/`; that directory is ignored by Git.
 
+## Shared project skills
+
+The versioned skills in `.agent-team/skills/` are usable by all three agents through `AGENTS.md`:
+
+- [`mob-realms-buildings`](../.agent-team/skills/mob-realms-buildings/SKILL.md) guides blueprint design, physical completion checks and construction-stall diagnosis.
+- [`mob-realms-civilization`](../.agent-team/skills/mob-realms-civilization/SKILL.md) guides settlement growth, resident behavior, offline work and save compatibility.
+
+On this VM, Codex also has four third-party Minecraft skills installed locally from [`Jahrome907/minecraft-agent-skills`](https://github.com/Jahrome907/minecraft-agent-skills/tree/dd57c5a97741cdc0eb5bb3a8f876581a4f09eeb0/.agents/skills): `minecraft-modding`, `minecraft-testing`, `minecraft-server-admin` and `minecraft-ci-release`. Their pinned source revision is `dd57c5a97741cdc0eb5bb3a8f876581a4f09eeb0`. These external files are not copied into this repository; Claude and Hermes may consult that source when applicable. Repository instructions and the project's Minecraft 26.3/Java 25 pins take precedence over general examples.
+
 ## Requirements
 
 Install and authenticate the `claude`, `hermes`, and `codex` CLIs separately, then put them on `PATH`. The script does not handle credentials. Use `python3 scripts/agent_team.py doctor` to see what is available. The repository must be clean before a run, so every worktree starts from the same commit. Java changes are checked with `./gradlew test build --no-daemon`; set `JAVA_HOME` to a Java 25 JDK if needed.
