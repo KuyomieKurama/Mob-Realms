@@ -1,0 +1,130 @@
+{
+  "building_root": {
+    "title": "Bauen: Grundlagen",
+    "description": "Bewohner schalten diesen Knoten bei Stufe 1 durch echte Arbeit frei.",
+    "icon": {
+      "type": "item",
+      "data": {
+        "item": "minecraft:crafting_table"
+      }
+    },
+    "frame": {
+      "type": "advancement",
+      "data": {
+        "frame": "task"
+      }
+    }
+  },
+  "building_mastery": {
+    "title": "Bauen: Meisterschaft",
+    "description": "Bewohner schalten diesen Knoten bei Stufe 3 durch echte Arbeit frei.",
+    "icon": {
+      "type": "item",
+      "data": {
+        "item": "minecraft:crafting_table"
+      }
+    },
+    "frame": {
+      "type": "advancement",
+      "data": {
+        "frame": "goal"
+      }
+    }
+  },
+  "mining_root": {
+    "title": "Bergbau: Grundlagen",
+    "description": "Bewohner schalten diesen Knoten bei Stufe 1 durch echte Arbeit frei.",
+    "icon": {
+      "type": "item",
+      "data": {
+        "item": "minecraft:iron_pickaxe"
+      }
+    },
+    "frame": {
+      "type": "advancement",
+      "data": {
+        "frame": "task"
+      }
+    }
+  },
+  "mining_mastery": {
+    "title": "Bergbau: Meisterschaft",
+    "description": "Bewohner schalten diesen Knoten bei Stufe 3 durch echte Arbeit frei.",
+    "icon": {
+      "type": "item",
+      "data": {
+        "item": "minecraft:iron_pickaxe"
+      }
+    },
+    "frame": {
+      "type": "advancement",
+      "data": {
+        "frame": "goal"
+      }
+    }
+  },
+  "gathering_root": {
+    "title": "Versorgung: Grundlagen",
+    "description": "Bewohner schalten diesen Knoten bei Stufe 1 durch echte Arbeit frei.",
+    "icon": {
+      "type": "item",
+      "data": {
+        "item": "minecraft:oak_log"
+      }
+    },
+    "frame": {
+      "type": "advancement",
+      "data": {
+        "frame": "task"
+      }
+    }
+  },
+  "gathering_mastery": {
+    "title": "Versorgung: Meisterschaft",
+    "description": "Bewohner schalten diesen Knoten bei Stufe 3 durch echte Arbeit frei.",
+    "icon": {
+      "type": "item",
+      "data": {
+        "item": "minecraft:oak_log"
+      }
+    },
+    "frame": {
+      "type": "advancement",
+      "data": {
+        "frame": "goal"
+      }
+    }
+  },
+  "combat_root": {
+    "title": "Kampf: Grundlagen",
+    "description": "Bewohner schalten diesen Knoten bei Stufe 1 durch echte Arbeit frei.",
+    "icon": {
+      "type": "item",
+      "data": {
+        "item": "minecraft:iron_sword"
+      }
+    },
+    "frame": {
+      "type": "advancement",
+      "data": {
+        "frame": "task"
+      }
+    }
+  },
+  "combat_mastery": {
+    "title": "Kampf: Meisterschaft",
+    "description": "Bewohner schalten diesen Knoten bei Stufe 3 durch echte Arbeit frei.",
+    "icon": {
+      "type": "item",
+      "data": {
+        "item": "minecraft:iron_sword"
+      }
+    },
+    "frame": {
+      "type": "advancement",
+      "data": {
+        "frame": "goal"
+      }
+    }
+  }
+}

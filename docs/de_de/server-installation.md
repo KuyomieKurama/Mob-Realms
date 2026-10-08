@@ -1,6 +1,8 @@
 # Server automatisch installieren (Linux)
 
-Das Skript installiert Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und Mob Realms 0.6.4-dev. Es verwendet den offiziellen Fabric Installer 1.1.2. Es ist für Arch Linux und andere Linux-Systeme gedacht, ohne zusätzliche Python-Pakete.
+Das Skript installiert Minecraft 26.3, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3, Pufferfish's Skills 0.19.2 und Mob Realms 0.9.0-dev. Es verwendet den offiziellen Fabric Installer 1.1.2. Es ist für Arch Linux und andere Linux-Systeme gedacht, ohne zusätzliche Python-Pakete.
+
+Neue Installationen setzen `pause-when-empty-seconds=-1` in `server.properties`, damit geladene Siedlungen auch ohne Spieler weiterlaufen. Bei bestehenden Servern diesen Wert vor dem Neustart selbst setzen; das Upgrade-Skript bewahrt bestehende Einstellungen.
 
 ## Voraussetzungen
 
@@ -26,13 +28,13 @@ Im Repository auf dem Branch `feat/m2-m4-realms`:
 ./scripts/install-server.sh --dir "$HOME/mob-realms-server"
 ```
 
-Wenn die Mod-JAR fehlt, wird zuerst `./gradlew --no-daemon build` einschließlich der Kerntests ausgeführt. Danach werden Server und Bibliotheken heruntergeladen und ein `mods`-Ordner mit beiden erforderlichen Mods angelegt. Die Installation startet noch keine Welt.
+Wenn die Mod-JAR fehlt, wird zuerst `./gradlew --no-daemon build` einschließlich der Kerntests ausgeführt. Danach werden Server und Bibliotheken heruntergeladen und ein `mods`-Ordner mit Fabric API, Pufferfish's Skills und Mob Realms angelegt. Die Installation startet noch keine Welt.
 
 Mit bereits gebauter oder aus dem CI-Artefakt entpackter Mod-JAR:
 
 ```sh
 ./scripts/install-server.sh --dir "$HOME/mob-realms-server" \
-  --mod /pfad/mob-realms-0.6.4-dev.jar --xms 1G --xmx 4G
+  --mod /pfad/mob-realms-0.9.0-dev.jar --xms 1G --xmx 4G
 ```
 
 Die Datei muss die normale Mod-JAR sein, nicht `-sources.jar`. Relative Pfade und Pfade mit Leerzeichen werden unterstützt.
@@ -81,6 +83,12 @@ Zusätzliche Mods können in `mods/` abgelegt werden. Ihre vollständigen Versio
 - `mobrealms-install.json`: Versions- und SHA-256-Manifest.
 - `server.properties`, `eula.txt`: Minecraft-Einstellungen.
 
+## Diagnose bei stockender Simulation
+
+Mob Realms schreibt alle 1200 Serverticks (bei 20 TPS etwa eine Minute) einen begrenzten Diagnoseblock nach `logs/latest.log`. `Mob Realms diagnostics` zeigt die mittlere und höchste Ausführungszeit des Mods pro Tick, Ticks über 10 ms, die Aufgabenwarteschlange, lokale Materialübergaben und Speicherzeiten. `Mob Realms work` teilt die Zeit auf Tagesverarbeitung, Bewohner-KI, Wirtschaft, Gründung, Zuteilung und Rekrutierung auf. `Mob Realms goals`, `Mob Realms resident` und `Mob Realms camp` zeigen Tätigkeiten, Positionen, Navigationsziele und Baufortschritt. Die Zeiten messen Mob Realms auf dem Serverthread, nicht die gesamte Server-Tickdauer.
+
+Die Diagnose ist standardmäßig aktiv. Mit `diagnosticsEnabled=false` in `config/mobrealms.properties` und einem Serverneustart lässt sie sich abschalten. Für eine Untersuchung mit aktiven Bewohnern den betroffenen Bereich im Spiel laden und mindestens eine Minute `logs/latest.log` aufzeichnen.
+
 Für einen einzelnen Start kannst du RAM überschreiben:
 
 ```sh
@@ -91,7 +99,7 @@ Eine wiederholte Installation in einen gültigen, verwalteten Ordner prüft ihn 
 
 Bei beschädigten oder ausgetauschten verwalteten JARs bricht die Prüfung ab. Stelle die Originaldateien wieder her oder installiere in ein neues Verzeichnis, statt Prüfsummen blind anzupassen.
 
-## Upgrade von 0.1.0-dev auf 0.6.4-dev
+## Upgrade auf 0.9.0-dev
 
 1. Den Server in seiner Konsole mit `stop` beenden und auf das vollständige Beenden warten.
 2. Im Repository den Entwicklungsbranch aktualisieren und das Upgrade ausführen:
@@ -108,7 +116,7 @@ Mit bereits gebauter JAR:
 
 ```sh
 bash scripts/upgrade-server.sh --dir "$HOME/mob-realms-server" \
-  --mod fabric-mod/build/libs/mob-realms-0.6.4-dev.jar
+  --mod fabric-mod/build/libs/mob-realms-0.9.0-dev.jar
 "$HOME/mob-realms-server/start-server.sh" --check
 "$HOME/mob-realms-server/start-server.sh"
 ```

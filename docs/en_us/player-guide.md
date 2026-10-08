@@ -1,16 +1,18 @@
-# Playing Mob Realms — 0.6.4-dev
+# Playing Mob Realms — 0.9.0-dev
 
-Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 and the same `mob-realms-0.6.4-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
+Install Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3, Pufferfish's Skills 0.19.2 for Fabric 26.3 and the same `mob-realms-0.9.0-dev.jar` on both client and server. Do not install the sources JAR. See [installation and upgrades](server-installation.md).
+
+Right-click a resident to see their role, innate aptitude (◆1–5), rank (★1–5), experience, goal and camp. Four further lines show building, mining, gathering and combat levels (0–5), branch XP and two skill nodes (`✦` unlocked, `○` locked). The atlas resident tooltip shows the same data. Actual work and combat advance the respective branch; levels and mastery improve work or attack cadence. Mob Realms saves NPC progress against its bundled Pufferfish skill tree because Pufferfish's native player skill screen and player data do not support NPCs. The standard skill key does not show resident progress. New houses, stores, workshops and markets may use compact furnished plans; previously started projects keep their saved plans. Settlement chunks stay loaded while the server runs without players if `pause-when-empty-seconds=-1` is set.
 
 ## Settlements
 
 Start in a Normal-difficulty test world. `/realm` opens the navy/gold/teal realm atlas. Refresh retrieves a server snapshot; overview and research scroll with the mouse wheel. The map shows claimed chunks on the selected page and dimension, without terrain.
 
-Natural founding searches loaded, clear, unprotected land near players after the configured grace period. Three residents receive a starter shelter, banner and initial food. Wild mobs retain vanilla behavior. Construction priorities are farms, housing, storage, workshops, markets and defenses. Buildings now adapt their plots with clearing, cut/fill foundations and a stepped entrance. The atlas reports the current objective and obstacle.
+Natural founding searches loaded, clear, unprotected land near players after the configured grace period. Three residents receive a starter shelter, banner and initial food. Wild mobs retain vanilla behavior. Construction priorities are farms, storage, workshops, housing, markets and defenses. Buildings now adapt their plots with clearing, cut/fill foundations and a stepped entrance. The atlas reports the current objective and obstacle.
 
-Builders place blocks and consume inventory. Gatherers and miners extract finite resources from unprotected commons and adjacent loaded land; building sites are excluded. Wood becomes construction material, wheat becomes bread, and workshops smelt raw iron with coal. Construction costs are simplified material packages, not exact vanilla recipes. No chunks are force-loaded.
+Builders place blocks and consume inventory. Gatherers and miners extract finite resources from unprotected commons and adjacent loaded land; building sites are excluded. Wood becomes construction material, wheat becomes bread, and workshops smelt raw iron with coal. Construction costs are simplified material packages, not exact vanilla recipes. Settlement areas stay loaded through chunk tickets while the server runs.
 
-Staffed farms produce bounded food daily; individual crops are not simulated as full vanilla harvesting. Housing and sustained food permit births. Each house supplies four additional places. Unloaded newborns appear when loaded. Damaged buildings lose their benefit when inspected; repairs are not automatic. Unloaded settlements can farm, trade existing stock and fund already planned projects, but do not discover resources or new building sites.
+Staffed farms produce bounded food daily; individual crops are not simulated as full vanilla harvesting. Empty settlements can adopt matching wild mobs or spend stored bread or seeds on immigration when loaded. Housing and sustained food permit births. Each house supplies four additional places. Unloaded newborns appear when loaded. Damaged buildings lose their benefit when inspected; repairs are not automatic. Unloaded settlements can farm, trade existing stock and fund already planned projects, but do not discover resources or new building sites.
 
 Eight profiles are available: zombies, skeletons, creepers, spiders, endermen, piglins, illagers and custom human settlers with nine skins. Zombies/skeletons avoid sunlight; endermen carry more and use peaceful autonomous diplomacy; piglins found in the Nether and do not zombify when civilized. Skeletons can equip bows, creepers unlock controlled siege breaches. Unique infection, web traps and a separate gold currency are future work. Most economic behavior is shared.
 
@@ -28,7 +30,7 @@ NPC acceptance thresholds: trade 10, non-aggression 20, alliance 50, vassalage 8
 
 ## Learning
 
-Daily reports score food, labor and losses. A bounded bandit selects prosperity, expansion or security. Workshops unlock five sequential technologies using research and cobblestone: improved agriculture, masonry/walls, shields, flanking and controlled creeper siege breaches. Work and combat grant veteran experience. Arrow adaptation currently observes fatal arrow attacks, not every projectile. Equipment costs actual materials. `learningRate=0` disables adaptation, not production/research.
+Daily reports score food, labor and losses. A bounded bandit selects prosperity, expansion or security. Productive work starts research before a workshop; workshops accelerate it. Five sequential technologies use research and materials, with the first agriculture unlock accepting harvested seeds: improved agriculture, masonry/walls, shields, flanking and controlled creeper siege breaches. Work and combat grant veteran experience. Arrow adaptation currently observes fatal arrow attacks, not every projectile. Equipment costs actual materials. `learningRate=0` disables adaptation, not production/research.
 
 ## Administration
 
@@ -46,7 +48,7 @@ Save format 5 reads formats 1/2/3/4. Downgrading requires restoring a full world
 
 ## Deaths, births and administration
 
-Confirmed deaths immediately remove a resident exactly once, release housing and reset growth progress. Undelivered cargo is lost; stored goods remain. Chunk unloading is not a death. No birth occurs on a loss-report day; at least two survivors, food and housing allow later recovery. Extinct settlements do not reproduce spontaneously.
+Confirmed deaths immediately remove a resident exactly once, release housing and reset growth progress. Undelivered cargo is lost; stored goods remain. Chunk unloading is not a death. No birth occurs on a loss-report day; at least two survivors, food and housing allow later recovery. Extinct settlements can recover through recruitment or resource-funded immigration in loaded chunks.
 
 Pending births persist across restarts and wait for a collision-free location near camp. They already count toward population and housing. Overview displays cumulative births, losses since the last daily report, fed days and the current growth blocker.
 
@@ -78,7 +80,7 @@ There is no one-active-settlement limit. Defaults are eight settlements, 1000 to
 
 Detailed slots now rotate every ten seconds across settlements and residents. With fewer slots than settlements, remaining towns receive later windows. Budget-paused residents keep their cargo and display a waiting status; unloaded residents explicitly display abstract simulation. Overview shows active and loaded worker counts.
 
-Gathering, processing, delivering and building are innate rules, not learned skills. Small/unfed settlements recall guards/traders to basic labor. Injured residents near home can consume one stored bread per five seconds to recover two health points until half health. Zombies/skeletons still avoid dangerous daylight, but Nether residents no longer shelter from nonexistent sunlight.
+Gathering, processing, delivering and building are innate work rules; individual aptitude and earned experience change work cadence. Small/unfed settlements recall guards/traders to basic labor. Injured residents near home can consume one stored bread per five seconds to recover two health points until half health. Zombie and skeleton residents resist daylight fire because their work AI replaces vanilla sun avoidance.
 
 Realm members relinquish vanilla goals. Targeted hooks prevent skeleton equipment changes from reinserting goals, piglin brains from competing, and endermen from abandoning jobs through daylight teleportation. Wild mobs are unchanged. Vanilla pathfinding and damage reactions remain. Creepers use the shared harvesting executor even without rendered hands; block-break effects and inventory show extraction.
 
@@ -115,7 +117,7 @@ Manual acceptance: observe extraction/stock/build progress in existing towns; ob
 
 ## Building on uneven ground (0.6.4)
 
-A pre-flattened 9 × 9 plot is no longer required. The survey chooses a median ground level and saves four stages: clear natural obstacles and higher ground, build paid stone foundations from the bottom up, add a three-block-wide stepped north entrance, then construct the original building. Usable excavated material travels as resident cargo. Foundation blocks consume real cobblestone. Building anchors and housing stay at the structure level.
+A pre-flattened 9 × 9 plot is no longer required. The survey chooses a median ground level and saves four stages: clear natural obstacles and higher ground, build paid foundations from the bottom up, add a three-block-wide stepped north entrance, then construct the original building. Usable excavated material travels as resident cargo. Foundations, access paths and simple ground floors consume real cobblestone, dirt or planks. Building anchors and housing stay at the structure level.
 
 The overview displays the stage and preparation progress. Residents try to leave occupied construction cells; players are not teleported or encased. Planned ground is not removed from under an occupying entity. Protected chunks, foreign claims, block entities and unexpected terrain changes stop the relevant operation.
 

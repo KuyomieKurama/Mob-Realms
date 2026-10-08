@@ -44,9 +44,27 @@ public final class Development {
         public String name = "";
         public Role role = Role.GATHERER;
         public int experience;
+        private final int[] branchExperience = new int[ResidentSkills.Branch.values().length];
         public boolean pendingSpawn;
         public void reward(int points) { experience = Math.min(10000, experience + Math.max(0, points)); }
+        public void reward(ResidentSkills.Branch branch,int points) {
+            reward(points);
+            int index=branch.ordinal();
+            branchExperience[index]=Math.min(10000,branchExperience[index]+Math.max(0,points));
+        }
+        public int skillExperience(ResidentSkills.Branch branch){return branchExperience[branch.ordinal()];}
+        public int skillLevel(ResidentSkills.Branch branch){return ResidentSkills.level(skillExperience(branch));}
+        public boolean unlocked(String node){
+            for(var branch:ResidentSkills.Branch.values()){
+                int level=skillLevel(branch);
+                if(node.equals(ResidentSkills.root(branch))&&level>=1)return true;
+                if(node.equals(ResidentSkills.mastery(branch))&&level>=3)return true;
+            }
+            return false;
+        }
         public int rank() { return Math.min(4, experience / 100); }
+        /** Bounded skill contribution for physically completed work. */
+        public int workIntervalBonus() { return rank(); }
     }
     public record Site(Building building,int x,int y,int z,boolean active) {}
     public static final class Town {
@@ -76,11 +94,13 @@ public final class Development {
         public int housing() { return 3 + count(Building.HOUSE) * 4; }
         public String stage(int population) { return population >= 64 && count(Building.MARKET) > 0 && technologies.size()>=3 ? "realm" : population >= 24 && count(Building.MARKET) > 0 ? "city" : population >= 8 ? "village" : "camp"; }
         public Building objective(int population) {
-            if (count(Building.FARM) == 0 || count(Building.FARM) * 6 < population) return Building.FARM;
-            if (housing() <= population) return Building.HOUSE;
+            if (count(Building.FARM) == 0) return Building.FARM;
+            if (count(Building.FARM) * 6 < population || (strategy == Strategy.PROSPERITY && starvation > 0 && count(Building.FARM) * 6 < population + 3)) return Building.FARM;
             if (count(Building.STORE) == 0) return Building.STORE;
+            if (strategy == Strategy.EXPANSION && housing() <= population) return Building.HOUSE;
             if (count(Building.WORKSHOP) == 0) return Building.WORKSHOP;
-            if (strategy == Strategy.SECURITY && count(Building.WATCHTOWER) == 0) return Building.WATCHTOWER;
+            if (strategy == Strategy.SECURITY && count(Building.WATCHTOWER) == 0 && (losses > 0 || rangedThreat > .35)) return Building.WATCHTOWER;
+            if (housing() <= population) return Building.HOUSE;
             if (count(Building.MARKET) == 0) return Building.MARKET;
             if (technologies.contains(Technology.MASONRY) && count(Building.WALL) == 0) return Building.WALL;
             return Building.HOUSE;
@@ -190,9 +210,21 @@ public final class Development {
             person.role = Role.values()[Math.floorMod(population,7)]; town.foodDays = 0; town.births++;
             event("growth",id,state.day());
         }
-        town.research = Math.min(10000, town.research + (town.count(Building.WORKSHOP) > 0 ? 1 + Math.min(10,town.labor/4) : 0));
+        // Residents learn from productive work even before a workshop exists. The workshop
+        // accelerates experiments, while starvation and idleness cannot create knowledge.
+        if (fed || town.labor > 0) {
+            int insight = town.count(Building.WORKSHOP) > 0 ? 2 + Math.min(10,town.labor/4) : 1 + Math.min(3,town.labor/8);
+            town.research = Math.min(10000, town.research + insight);
+        }
         int index = town.technologies.size();
-        if (index < Technology.values().length && town.research >= 10 * (index+1) && state.consume(id,Map.of("minecraft:cobblestone",4L*(index+1)))) {
+        boolean materials = false;
+        if (index < Technology.values().length && town.research >= 10 * (index+1)) {
+            // Farming research can be learned from the farm's actual seed harvest; old
+            // settlements with stone reserves retain their existing research path.
+            materials = index == 0 && state.consume(id,Map.of("minecraft:wheat_seeds",8L));
+            if (!materials) materials = state.consume(id,Map.of("minecraft:cobblestone",4L*(index+1)));
+        }
+        if (materials) {
             town.technologies.add(Technology.values()[index]); town.research -= 10*(index+1); event("technology",id,state.day());
         }
         double reward = Math.max(-1, Math.min(1, (fed ? .3 : -.5) + Math.min(.5,town.labor/40.0) - town.losses*.3));
@@ -230,7 +262,7 @@ public final class Development {
             out.writeInt(t.foodDays);out.writeInt(t.starvation);out.writeInt(t.births);out.writeInt(t.research);out.writeInt(t.labor);out.writeInt(t.losses);out.writeInt(t.rangedHits);out.writeInt(t.meleeHits);out.writeLong(t.lastDay);out.writeDouble(t.rangedThreat);out.writeUTF(t.obstacle);
             out.writeBoolean(t.project!=null);if(t.project!=null){var p=t.project;out.writeUTF(p.building.name());out.writeInt(p.progress);out.writeInt(p.paid);out.writeBoolean(p.counted);out.writeInt(p.tiles.size());for(var x:p.tiles){out.writeInt(x.x());out.writeInt(x.y());out.writeInt(x.z());out.writeUTF(x.block());out.writeUTF(x.material());out.writeUTF(x.phase().name());out.writeUTF(x.expected());}}
         }
-        out.writeInt(people.size());for(var e:new TreeMap<>(people).entrySet()){uuid(out,e.getKey());var p=e.getValue();out.writeUTF(p.species);out.writeUTF(p.name);out.writeUTF(p.role.name());out.writeInt(p.experience);out.writeBoolean(p.pendingSpawn);}
+        out.writeInt(people.size());for(var e:new TreeMap<>(people).entrySet()){uuid(out,e.getKey());var p=e.getValue();out.writeUTF(p.species);out.writeUTF(p.name);out.writeUTF(p.role.name());out.writeInt(p.experience);out.writeBoolean(p.pendingSpawn);for(var branch:ResidentSkills.Branch.values())out.writeInt(p.skillExperience(branch));}
         out.writeInt(relations.size());for(var e:relations.entrySet()){out.writeUTF(e.getKey());var r=e.getValue();out.writeInt(r.score);out.writeUTF(r.treaty.name());out.writeBoolean(r.overlord!=null);if(r.overlord!=null)uuid(out,r.overlord);out.writeLong(r.lastTradeDay);out.writeUTF(r.offer==null?"":r.offer.name());if(r.offer!=null){uuid(out,r.proposer);out.writeLong(r.expires);}}
         out.writeInt(chronicle.size());for(String line:chronicle)out.writeUTF(line);out.writeLong(nextNameSequence);
     }
@@ -248,7 +280,7 @@ public final class Development {
             t.foodDays=bounded(in,1000000);t.starvation=bounded(in,1000000);t.births=bounded(in,100000);t.research=bounded(in,10000);t.labor=bounded(in,1000000);t.losses=bounded(in,100000);t.rangedHits=bounded(in,1000000);t.meleeHits=bounded(in,1000000);t.lastDay=in.readLong();t.rangedThreat=finite(in,0,1);t.obstacle=in.readUTF();
             if(in.readBoolean()){Building b=Building.valueOf(in.readUTF());int progress=bounded(in,4096),paid=bounded(in,4096);boolean counted=in.readBoolean();int tiles=bounded(in,4096);List<Tile> list=new ArrayList<>();for(int i=0;i<tiles;i++){int x=in.readInt(),y=in.readInt(),z=in.readInt();String block=in.readUTF(),material=in.readUTF();list.add(version>=5?new Tile(x,y,z,block,material,WorkPhase.valueOf(in.readUTF()),in.readUTF()):new Tile(x,y,z,block,material));}t.project=new Project(b,list);if(progress>paid||paid>tiles||(counted&&paid!=tiles)||(progress<t.project.preparationCount&&paid>progress))throw new IOException("Invalid project progress");t.project.progress=progress;t.project.paid=paid;t.project.counted=counted;}
         }
-        people.clear();int persons=bounded(in,100000);if(persons!=state.citizenCount())throw new IOException("Citizen count mismatch");for(int i=0;i<persons;i++){UUID id=uuid(in);if(!state.hasCitizen(id)||people.containsKey(id))throw new IOException("Invalid citizen development");var p=new Person();p.species=in.readUTF();identifier(p.species);if(version>=4){p.name=in.readUTF();if(p.name.isBlank()||p.name.length()>100)throw new IOException("Invalid resident name");}p.role=Role.valueOf(in.readUTF());p.experience=bounded(in,10000);p.pendingSpawn=in.readBoolean();people.put(id,p);}
+        people.clear();int persons=bounded(in,100000);if(persons!=state.citizenCount())throw new IOException("Citizen count mismatch");for(int i=0;i<persons;i++){UUID id=uuid(in);if(!state.hasCitizen(id)||people.containsKey(id))throw new IOException("Invalid citizen development");var p=new Person();p.species=in.readUTF();identifier(p.species);if(version>=4){p.name=in.readUTF();if(p.name.isBlank()||p.name.length()>100)throw new IOException("Invalid resident name");}p.role=Role.valueOf(in.readUTF());p.experience=bounded(in,10000);p.pendingSpawn=in.readBoolean();if(version>=6){for(var branch:ResidentSkills.Branch.values())p.branchExperience[branch.ordinal()]=bounded(in,10000);}else p.branchExperience[ResidentSkills.branch(p.role).ordinal()]=p.experience;people.put(id,p);}
         int pairs=bounded(in,523776);for(int i=0;i<pairs;i++){String key=in.readUTF();String[] ids=key.split("/");if(ids.length!=2||!key.equals(pair(UUID.fromString(ids[0]),UUID.fromString(ids[1]))))throw new IOException("Invalid relation");var r=new Relation();r.score=in.readInt();if(r.score< -100||r.score>100)throw new IOException("Invalid score");r.treaty=Treaty.valueOf(in.readUTF());r.overlord=in.readBoolean()?uuid(in):null;r.lastTradeDay=in.readLong();String offer=in.readUTF();if(!offer.isEmpty()){r.offer=Treaty.valueOf(offer);r.proposer=uuid(in);r.expires=in.readLong();if(!r.proposer.toString().equals(ids[0])&&!r.proposer.toString().equals(ids[1]))throw new IOException("Invalid proposer");}if(relations.put(key,r)!=null)throw new IOException("Duplicate relation");}
         int history=bounded(in,256);for(int i=0;i<history;i++)chronicle.add(in.readUTF());
         if(version>=4){

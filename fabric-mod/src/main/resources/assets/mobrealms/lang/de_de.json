@@ -279,5 +279,9 @@
   "phase.mobrealms.access": "Zugang",
   "phase.mobrealms.build": "Hochbau",
   "phase.mobrealms.complete": "Fertig",
-  "screen.mobrealms.construction_phase": "Phase: %s · Vorarbeiten %s / %s"
+  "screen.mobrealms.construction_phase": "Phase: %s · Vorarbeiten %s / %s",
+  "skill.mobrealms.building": "Bauen",
+  "skill.mobrealms.mining": "Bergbau",
+  "skill.mobrealms.gathering": "Versorgung",
+  "skill.mobrealms.combat": "Kampf"
 }

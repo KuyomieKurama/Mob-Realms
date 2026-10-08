@@ -238,6 +238,13 @@ public final class RealmScreen extends Screen {
     }
     private Component residentTooltip(JsonObject person,String citizen){
         var label=tr("resident_detail",str(person,"name"),name("rank",str(person,"socialRank")),name("role",str(person,"role")),number(person,"rank"),citizen).copy();
+        if(person.has("skills"))for(var entry:person.getAsJsonObject("skills").entrySet()){
+            var skill=entry.getValue().getAsJsonObject();
+            label.append("\n").append(Component.translatable("skill.mobrealms."+entry.getKey()))
+                    .append(Component.literal("  "+(skill.get("root").getAsBoolean()?"✦":"○")
+                            +(skill.get("mastery").getAsBoolean()?" ✦":" ○")
+                            +"  Lv"+skill.get("level").getAsInt()+"/5  "+skill.get("xp").getAsInt()+" XP"));
+        }
         if(person.has("wanted"))label.append("\n").append(workDiagnostic(person));return label;
     }
     private void research(GuiGraphicsExtractor g,JsonObject d){

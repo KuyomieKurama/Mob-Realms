@@ -41,8 +41,11 @@ class InstallerTests(unittest.TestCase):
         self.target = self.root / 'server with spaces'
         self.mod = self.root / 'mod.jar'
         jar(self.mod, 'mobrealms', m.VERSIONS['mobrealms'])
+        self.dependency_patch = patch.object(m, 'download_pinned', side_effect=lambda url, path, sha: jar(path, 'puffish_skills', m.VERSIONS['puffish_skills']))
+        self.dependency_patch.start()
 
     def tearDown(self):
+        self.dependency_patch.stop()
         self.tmp.cleanup()
 
     def args(self, **changes):
@@ -76,11 +79,15 @@ class InstallerTests(unittest.TestCase):
              patch.object(m.subprocess, 'run', side_effect=self.fake_java):
             return m.install(self.args(**changes))
 
-    def old_server(self):
+    def old_server(self, version='0.1.0-dev'):
         self.install()
-        jar(self.target / 'mods/mob-realms.jar', 'mobrealms', '0.1.0-dev')
+        self.assertIn('pause-when-empty-seconds=-1', (self.target / 'server.properties').read_text())
+        jar(self.target / 'mods/mob-realms.jar', 'mobrealms', version)
         manifest = json.loads((self.target / m.MANIFEST).read_text())
-        manifest['versions']['mobrealms'] = '0.1.0-dev'
+        manifest['versions']['mobrealms'] = version
+        manifest['versions'].pop('puffish_skills', None)
+        manifest['files'].pop('mods/puffish-skills.jar', None)
+        (self.target / 'mods/puffish-skills.jar').unlink()
         manifest['files']['mods/mob-realms.jar'] = m.digest(self.target / 'mods/mob-realms.jar')
         m.write_json(self.target / m.MANIFEST, manifest)
         (self.target / 'world').mkdir()
@@ -95,6 +102,25 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(m.read_mod(backup / 'mods/mob-realms.jar')['version'], '0.1.0-dev')
         m.verify_install(self.target)
         self.assertIsNone(u.upgrade(self.target, self.mod))
+
+    def test_upgrade_accepts_previous_minor_version(self):
+        self.old_server('0.6.4-dev')
+        backup = u.upgrade(self.target, self.mod)
+        self.assertEqual(m.read_mod(backup / 'mods/mob-realms.jar')['version'], '0.6.4-dev')
+        m.verify_install(self.target)
+
+    def test_upgrade_accepts_previous_patch_version(self):
+        self.old_server('0.7.0-dev')
+        backup = u.upgrade(self.target, self.mod)
+        self.assertEqual(m.read_mod(backup / 'mods/mob-realms.jar')['version'], '0.7.0-dev')
+        m.verify_install(self.target)
+
+    def test_upgrade_adds_pufferfish_from_previous_minor(self):
+        self.old_server('0.8.0-dev')
+        backup = u.upgrade(self.target, self.mod)
+        self.assertFalse((backup / 'mods/puffish-skills.jar').exists())
+        self.assertEqual(m.read_mod(self.target / 'mods/puffish-skills.jar')['version'], '0.19.2')
+        m.verify_install(self.target)
 
     def test_upgrade_rolls_back_failed_replacement(self):
         self.old_server()

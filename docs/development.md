@@ -29,7 +29,7 @@ python3 scripts/check_resources.py
 ./gradlew runClient
 ```
 
-Mod artifact: `fabric-mod/build/libs/mob-realms-0.6.4-dev.jar`. The core is included in this JAR. Do not install `sim-core` or the sources JAR separately.
+Mod artifact: `fabric-mod/build/libs/mob-realms-0.9.0-dev.jar`. The core is included in this JAR. Do not install `sim-core` or the sources JAR separately.
 
 For a development dedicated server:
 
@@ -82,7 +82,7 @@ For a user-local installer JDK on Linux x64, use `export JAVA_HOME="${XDG_DATA_H
 
 ## 0.6.3-dev validation
 
-Local checks: Java 25 compilation of common and client sources against the official Minecraft 26.3 JAR and exact Fabric API modules; 28 core scenarios; 21 installer/upgrade tests; JSON and bilingual translation parity. Local Gradle is blocked by sandbox Unix-socket restrictions, so the repository CI is the full Loom build gate. Do not treat manual javac as a substitute for a successful CI build. No interactive Minecraft rendering or gameplay was run here.
+Local checks for 0.9.0-dev: `./gradlew test build` with Java 25, 22 civilization scenarios plus core and terrain scenarios, 24 installer/upgrade tests, and `python3 scripts/check_resources.py` for JSON and bilingual translation parity. A disposable Minecraft server loaded the Pufferfish resident tree and bound all eight nodes. Interactive client rendering and a long-term gameplay run remain unverified.
 
 
 ## Terrain construction validation (0.6.4)

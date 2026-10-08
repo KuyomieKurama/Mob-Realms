@@ -13,8 +13,28 @@ public final class DevelopmentTests {
     private static void check(boolean c,String why){if(!c)throw new AssertionError(why);}
     private static void next(RealmSimulation s){s.advanceDay();s.development().daily(s,A,.2,1,2);}
     public static void main(String[] args)throws Exception{
-        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();identities();socialRanks();legacyNames();fairDetail();waitingCargo();basicSkills();admission();resourceCoverage();workTimeouts();materialAlternatives();
-        System.out.println("Passed 20 civilization scenarios.");
+        growth();project();trade();diplomacy();learning();save();production();lifecycle();populationCap();eventLog();identities();socialRanks();legacyNames();fairDetail();waitingCargo();basicSkills();admission();resourceCoverage();workTimeouts();materialAlternatives();individualSkills();npcSkillPersistence();
+        System.out.println("Passed 22 civilization scenarios.");
+    }
+    private static void npcSkillPersistence()throws Exception{
+        var s=fixture();UUID id=new UUID(0,10);var p=s.development().person(id);
+        p.reward(ResidentSkills.Branch.BUILDING,160);
+        p.reward(ResidentSkills.Branch.COMBAT,70);
+        check(p.unlocked("building_root")&&p.unlocked("building_mastery")&&!p.unlocked("combat_mastery"),"NPC nodes unlock incorrectly");
+        var copy=RealmStore.decode(RealmStore.encode(s)).development().person(id);
+        check(copy.skillExperience(ResidentSkills.Branch.BUILDING)==160&&copy.skillExperience(ResidentSkills.Branch.COMBAT)==70,"NPC branches lost on save");
+        check(copy.skillLevel(ResidentSkills.Branch.BUILDING)==3&&copy.skillLevel(ResidentSkills.Branch.COMBAT)==1,"NPC skill levels changed on restart");
+    }
+    private static void individualSkills(){
+        Set<Integer> strengths=new HashSet<>();
+        for(int n=0;n<100;n++){
+            UUID id=new UUID(0,n);int aptitude=ResidentSkills.aptitude(id,Role.BUILDER);
+            check(aptitude>=1&&aptitude<=5,"invalid innate aptitude");
+            check(aptitude==ResidentSkills.aptitude(id,Role.BUILDER),"aptitude changed for resident");
+            check(ResidentSkills.workBonus(id,Role.BUILDER,200)>ResidentSkills.workBonus(id,Role.BUILDER,0),"practice did not improve work");
+            strengths.add(aptitude);
+        }
+        check(strengths.size()==5,"birth aptitudes lack variation");
     }
     private static void resourceCoverage(){
         var origin=new ChunkKey("minecraft:overworld",-8,7);var survey=new ResourceSurvey(origin,3,11);
@@ -57,6 +77,26 @@ public final class DevelopmentTests {
         var copy=RealmStore.decode(RealmStore.encode(s));check(copy.hasCitizen(id)&&!copy.development().person(id).name.isBlank(),"admission identity not persisted");
         check(copy.development().chronicle().stream().anyMatch(e->e.contains(":recruitment:")),"recruitment not logged");
         check(!copy.admit(new UUID(0,801),B),"abandoned camp recruited without residents");
+        UUID first=new UUID(0,811),second=new UUID(0,812);
+        check(copy.resettle(first,B)&&copy.population(B)==1&&copy.stock(B).isEmpty(),"wild resident did not restart empty camp without fabricated goods");
+        check(!copy.resettle(first,B)&&copy.resettle(second,B)&&copy.population(B)==2,"resettlement did not restore founding population safely");
+        check(!copy.resettle(new UUID(0,813),B)&&!copy.admit(new UUID(0,813),B),"resettlement bypassed population or food limit");
+        var resettled=RealmStore.decode(RealmStore.encode(copy));
+        check(resettled.population(B)==2&&resettled.development().chronicle().stream().anyMatch(e->e.contains(":resettlement:")),"resettlement was not persisted");
+        var refugees=new RealmSimulation(8,10,10);refugees.found(new RealmSimulation.Camp(A,"mobrealms:human",new ChunkKey("minecraft:overworld",0,0),8,64,8));
+        UUID refugee=new UUID(0,814);
+        check(!refugees.immigrate(refugee,A)&&refugees.population(A)==0,"refugee appeared without food");
+        refugees.credit(A,"minecraft:bread",8);
+        check(refugees.immigrate(refugee,A)&&refugees.population(A)==1&&refugees.stock(A).isEmpty()
+                &&refugees.development().person(refugee).pendingSpawn,"refugee failed to consume eight bread or await safe spawn");
+        check(!refugees.immigrate(new UUID(0,815),A)&&refugees.population(A)==1,"second refugee appeared without food");
+        var restoredRefugees=RealmStore.decode(RealmStore.encode(refugees));
+        check(restoredRefugees.development().person(refugee).pendingSpawn
+                &&restoredRefugees.development().chronicle().stream().anyMatch(e->e.contains(":immigration:")),"pending refugee was not persisted");
+        var seeded=new RealmSimulation(8,10,10);seeded.found(new RealmSimulation.Camp(B,"mobrealms:zombie",new ChunkKey("minecraft:overworld",2,0),40,64,8));
+        seeded.credit(B,"minecraft:wheat_seeds",24);
+        check(seeded.immigrate(new UUID(0,816),B)&&seeded.immigrate(new UUID(0,817),B)
+                &&seeded.population(B)==2&&seeded.stock(B).isEmpty(),"seed-backed settlement recovery duplicated supplies");
         copy.consume(A,Map.of("minecraft:bread",4L));check(!copy.admit(new UUID(0,802),A),"recruited without food");
         var capped=new RealmSimulation(8,3,3);capped.found(new RealmSimulation.Camp(A,"mobrealms:human",new ChunkKey("minecraft:overworld",0,0),8,64,8));
         for(int n=0;n<3;n++)capped.addCitizen(new UUID(0,n),A,.5);

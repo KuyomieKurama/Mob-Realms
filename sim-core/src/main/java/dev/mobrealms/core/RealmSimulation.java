@@ -143,6 +143,31 @@ public final class RealmSimulation {
         if(!consume(camp,Map.of("minecraft:bread",4L)))return false;
         addCitizen(id,camp,.6);development.event("recruitment",camp,day);return true;
     }
+    /** Adopt an existing wild entity to restart a deserted settlement; no goods are created or spent. */
+    public boolean resettle(UUID id, UUID camp) {
+        var town=development.town(camp);
+        int population=population(camp);
+        if(hasCitizen(id)||citizenCount()>=maxPopulation||population>=2||population>=town.housing())return false;
+        addCitizen(id,camp,.6);
+        town.obstacle="survey";
+        development.event("resettlement",camp,day);
+        return true;
+    }
+    /** A refugee joins a nearly empty camp in exchange for real food already in its stockpile. */
+    public boolean immigrate(UUID id, UUID camp) {
+        var town=development.town(camp);
+        int population=population(camp);
+        if(hasCitizen(id)||citizenCount()>=maxPopulation||population>=2||population>=town.housing())return false;
+        if(!consume(camp,Map.of("minecraft:bread",8L))
+                &&!consume(camp,Map.of("minecraft:wheat_seeds",12L)))return false;
+        addCitizen(id,camp,.6);
+        var person=development.person(id);
+        person.pendingSpawn=true;
+        person.role=population==0?Development.Role.BUILDER:Development.Role.GATHERER;
+        town.obstacle="survey";
+        development.event("immigration",camp,day);
+        return true;
+    }
     public Lease activate(UUID id) {
         Citizen c = required(id);
         if (c.mode == Mode.DETAILED) throw new IllegalStateException("Already active");

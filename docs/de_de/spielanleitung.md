@@ -1,8 +1,12 @@
-# Mob Realms spielen — 0.6.4-dev
+# Mob Realms spielen — 0.9.0-dev
 
 ## Installation und Einstieg
 
-Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3 und dieselbe `mob-realms-0.6.4-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
+Client und Server benötigen Minecraft 26.3, Java 25, Fabric Loader 0.19.5, Fabric API 0.161.0+26.3, Pufferfish's Skills 0.19.2 für Fabric 26.3 und dieselbe `mob-realms-0.9.0-dev.jar` im jeweiligen `mods`-Ordner. Die Sources-JAR ist keine Mod. Details: [Server installieren und aktualisieren](server-installation.md).
+
+Rechtsklick auf einen Bewohner zeigt Beruf, angeborene Begabung (◆1–5), Rang (★1–5), Erfahrung, Ziel und Lager. Seine Erfahrung und Begabung beschleunigen echte Arbeitsupdates. Neue Häuser, Lager, Werkstätten und Märkte können kompakte Varianten mit Dach und passender Einrichtung erhalten; gespeicherte alte Bauprojekte behalten ihren Bauplan. Bei laufendem Server bleiben Siedlungsbereiche auch ohne Spieler geladen, sofern `pause-when-empty-seconds=-1` gesetzt ist.
+
+Beim Rechtsklick folgen vier Zeilen für **Bauen, Bergbau, Versorgung und Kampf**. Jede zeigt Stufe 0–5, Zweig-Erfahrung und zwei Knoten: `✦` freigeschaltet, `○` noch gesperrt. Im Atlas stehen dieselben Werte als Tooltip beim Bewohner. Echte Arbeit und Kämpfe steigern den passenden Zweig; höhere Stufen und Meisterschaft verkürzen Arbeits- beziehungsweise Kampfabstände. Die Knoten stammen aus dem mitgelieferten Pufferfish-Baum. Pufferfishs eigene Skill-Oberfläche und deren Spieler-Speicher unterstützen keine NPCs; deshalb speichert Mob Realms den Bewohnerfortschritt selbst. Die Standard-Skill-Taste zeigt keinen Bewohnerfortschritt.
 
 Beginne in einer Testwelt auf Normal. `/realm` öffnet den Reichsatlas. Er zeigt einen Server-Schnappschuss; **Aktualisieren** lädt aktuelle Werte. Gold markiert die gewählte Siedlung, Türkis aktive Entwicklung. Übersicht und Forschung lassen sich mit dem Mausrad scrollen. Die Karte zeigt beanspruchte Chunks der aktuellen Siedlungsseite und Dimension, keine Landschaft.
 
@@ -10,11 +14,11 @@ Beginne in einer Testwelt auf Normal. `/realm` öffnet den Reichsatlas. Er zeigt
 
 Nach der konfigurierten Schonfrist suchen natürliche Gründungen in geladenen Gebieten bei Spielern nach freien Bauplätzen. Ein Lager startet mit drei Bewohnern, Dach, Banner und einmaligen Nahrungsvorräten. Wilde Mobs bleiben Vanilla-Mobs. Auf engen, geschützten, unebenen oder bereits belegten Flächen entsteht kein Lager.
 
-Zuerst wird ein Feld geplant, dann Wohnraum, Lager und Werkstatt, später Markt und Verteidigung. Im Atlas siehst du das nächste Bauziel und den aktuellen Engpass. Baumeister setzen Blöcke einzeln. Sammler und Bergleute beschaffen dafür echte Ressourcen aus ungeschützten, eigenen Rohstoff-Chunks und angrenzendem geladenem Land. Bauflächen werden nicht abgebaut. Neue Gebäude passen ihren Bauplatz durch Erdarbeiten, Fundamente und einen Zugang an das Gelände an. Es werden keine Chunks zwangsgeladen.
+Zuerst wird ein Feld geplant, dann Lager und Werkstatt vor dem nächsten Wohnhaus, später Markt und Verteidigung. Im Atlas siehst du das nächste Bauziel und den aktuellen Engpass. Baumeister setzen Blöcke einzeln. Sammler und Bergleute beschaffen dafür echte Ressourcen aus ungeschützten, eigenen Rohstoff-Chunks und angrenzendem geladenem Land. Bauflächen werden nicht abgebaut. Neue Gebäude passen ihren Bauplatz durch Erdarbeiten, Fundamente und einen Zugang an das Gelände an. Siedlungsbereiche werden beim laufenden Server durch Chunk-Tickets geladen.
 
 Holz wird zu Baumaterial verarbeitet, Weizen zu Brot; Werkstätten verarbeiten Roheisen mit Kohle. Baustoffkosten sind vereinfachte Baupakete, keine exakte Abbildung aller Vanilla-Rezepte. Beispielsweise bezahlt Holz auch Holzmöbel. Dekorative Farmblöcke gehören zur Feldvorlage.
 
-Bauern erzeugen täglich begrenzte Nahrung aus funktionsfähigen Feldern. Dies ist eine Wirtschaftsberechnung; einzelne Weizenpflanzen werden nicht vollständig nach Vanilla-Regeln geerntet. Ohne Nahrung stoppt das Wachstum. Häuser schaffen je vier zusätzliche Wohnplätze. Nach ausreichend versorgten Tagen entstehen Bewohner; in entladenen Gebieten werden sie erst beim Laden sichtbar. Beschädigte Gebäude verlieren nach Prüfung ihren Nutzen. Automatische Reparatur ist noch nicht implementiert.
+Bauern erzeugen täglich begrenzte Nahrung aus funktionsfähigen Feldern. Dies ist eine Wirtschaftsberechnung; einzelne Weizenpflanzen werden nicht vollständig nach Vanilla-Regeln geerntet. Ohne Nahrung stoppt das Wachstum. Leere Siedlungen können bei geladenem Dorfgebiet passende wilde Mobs aufnehmen oder vorhandenes Brot beziehungsweise Saatgut für Zuwanderung verbrauchen. Häuser schaffen je vier zusätzliche Wohnplätze. Nach ausreichend versorgten Tagen entstehen Bewohner; in entladenen Gebieten werden sie erst beim Laden sichtbar. Beschädigte Gebäude verlieren nach Prüfung ihren Nutzen. Automatische Reparatur ist noch nicht implementiert.
 
 Geladene Händler reisen für Handel zwischen nahen Siedlungen. Ohne Handelspakt, Bündnis oder Vasallität gibt es keinen automatischen Tausch. Vorräte werden auf beiden Seiten tatsächlich abgezogen. Entladene Siedlungen können bestehende Felder nutzen und bereits geplante Bauprojekte bezahlen; sie erkunden und erfinden keine neuen Rohstoffvorkommen.
 
@@ -55,7 +59,7 @@ Wachen und Soldaten bekämpfen nahe Bewohner und Spieler verfeindeter Nationen. 
 
 Jeden Simulationstag bewertet eine Siedlung Versorgung, Arbeit und Verluste. Ein begrenzter Bandit-Algorithmus vergleicht Wohlstand, Wachstum und Sicherheit. Die Gewichte und gelernte Fernkampfgefahr stehen im Forschungstab. Es gibt keine externen ML-Dienste.
 
-Werkstätten erzeugen Forschungspunkte. Die fünf aufeinanderfolgenden Technologien kosten zunehmend Forschung und Bruchstein: Landwirtschaft verbessert Ernten, Mauerwerk ermöglicht Mauern, Schilde ermöglichen ressourcenabhängige Schutzschilde, Flankieren beeinflusst Kampfwege, Belagerung ermöglicht Creeper-Durchbrüche. Veteranen sammeln Erfahrung bei Arbeit und Kämpfen. Die Fernkampfanpassung erfasst aktuell tödliche Pfeilangriffe, nicht jeden abgegebenen Schuss.
+Produktive Arbeit erzeugt bereits vor einer Werkstatt Forschungspunkte; eine Werkstatt beschleunigt sie. Die fünf aufeinanderfolgenden Technologien kosten zunehmend Forschung und Materialien. Landwirtschaft kann auch mit geerntetem Saatgut freigeschaltet werden. Mauerwerk ermöglicht Mauern, Schilde ermöglichen ressourcenabhängige Schutzschilde, Flankieren beeinflusst Kampfwege, Belagerung ermöglicht Creeper-Durchbrüche. Veteranen sammeln Erfahrung bei Arbeit und Kämpfen und arbeiten mit höheren Rängen häufiger. Die Fernkampfanpassung erfasst aktuell tödliche Pfeilangriffe, nicht jeden abgegebenen Schuss.
 
 ## Administration und Zeitraffer
 
@@ -76,13 +80,13 @@ Die Konfiguration unter `config/mobrealms.properties` enthält Wachstumsdauer, A
 
 Teste zuerst in einer Kopie deiner Welt: Lager bei Wald gründen und umliegendes Hügelland zum Bauen nutzen, Vorräte spenden, Bau bis Feld und Haus beobachten, 30 Tage simulieren, Rollen und Handel prüfen, speichern/neustarten und Baufortschritt vergleichen. Prüfe mit zwei Spielern, dass Verträge Zustimmung benötigen und fremde Rollen nicht geändert werden können. Teste UI bei verschiedenen GUI-Skalierungen und Zeitraffer anschließend wieder auf 1× zurücksetzen.
 
-0.6.4-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
+0.9.0-dev ist ein Entwicklungskandidat. Die automatisierten Kern- und Skripttests ersetzen keinen Spieltest von Navigation, Kampf, Rendering oder Mehrspielerbetrieb. Siedlungen sind einzelne politische Einheiten, noch keine Länder mit mehreren Städten. Keine automatische Reparatur, Straßenplanung, vollständige Untertageminen, dynamischen Forschungsbäume oder Questketten. Unbeladene neue Bauplätze werden nicht geplant. Gelände und knappe Ressourcen können Entwicklung anhalten; der Atlas zeigt den Engpass.
 
-Speicherformat 5 liest alte Formate 1/2/3/4. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR beim Upgrade ebenfalls ersetzen.
+Speicherformat 6 liest alte Formate 1–5. Zurück auf eine alte Modversion nur mit vollständigem Welt-Backup; der Upgrader erstellt dieses bei gestopptem Server. Client-JAR und Pufferfish-Abhängigkeit beim Upgrade ebenfalls installieren.
 
 ## Bevölkerungsverluste und Admin-Ansicht
 
-Bestätigte Todesfälle entfernen einen Bewohner sofort und genau einmal. Sein Wohnplatz wird frei, ungetragenes Lagergut bleibt erhalten, seine nicht abgelieferte Fracht geht verloren. Das Entladen eines Chunks zählt nicht als Tod. Verluste setzen den Wachstumsfortschritt zurück; am betroffenen Simulationstag entstehen keine neuen Bewohner. Mit mindestens zwei Überlebenden, Nahrung und Wohnraum kann sich die Bevölkerung danach erholen. Eine ausgestorbene Siedlung vermehrt sich nicht von selbst.
+Bestätigte Todesfälle entfernen einen Bewohner sofort und genau einmal. Sein Wohnplatz wird frei, ungetragenes Lagergut bleibt erhalten, seine nicht abgelieferte Fracht geht verloren. Das Entladen eines Chunks zählt nicht als Tod. Verluste setzen den Wachstumsfortschritt zurück; am betroffenen Simulationstag entstehen keine neuen Bewohner. Mit mindestens zwei Überlebenden, Nahrung und Wohnraum kann sich die Bevölkerung danach erholen. Eine ausgestorbene Siedlung kann in geladenen Chunks wilde Mobs aufnehmen oder Zuwanderung aus vorhandenen Brot- beziehungsweise Saatgutvorräten bezahlen.
 
 Nachwuchs wird gespeichert, bevor er in der Welt erscheint. Fehlt ein kollisionsfreier Platz beim Lager, bleibt er wartend und wird später erneut platziert. Wartende Bewohner zählen bereits zur Bevölkerung und zum Wohnraumbedarf. Die Übersicht zeigt Geburten seit Gründung, Verluste seit dem letzten Tagesbericht, versorgte Tage und den Wachstumsengpass.
 
@@ -113,7 +117,7 @@ Gesellschaftlicher Rang, Beruf und Veteranenstufe sind getrennt. Der Rang richte
 
 Der erste Bewohner übernimmt die Führung, ohne seinen Beruf aufzugeben. Beim Tod oder Wegzug folgt deterministisch ein verbliebener Bewohner; die Führung wird gespeichert. In deiner Nation ernennt die Rollenwahl **Anführer** den gewählten Bewohner zum neuen Oberhaupt. Führungsränge sind hier Titel und Mitgliedschaft, keine fertige Erbfolge- oder Bürgerkriegsmechanik. Bei Bevölkerungsverlusten können Entwicklungsstand und Titel zurückgehen. Namen und aktuelle Ränge stehen am Mob und im Bewohner-Tab; Tooltips zeigen zusätzlich Beruf, Veteranenstufe und UUID.
 
-Speicherformat 5 migriert Formate 1–4 automatisch. Vor dem Update ein Backup anlegen; Modstände bis 0.6.3 können Format 5 nicht lesen. Teste nach dem Update Namen, Anwerben, Rangwechsel durch Wachstum und Tod des Oberhaupts sowie einen Neustart.
+Speicherformat 6 migriert Formate 1–5 automatisch. Vor dem Update ein Backup anlegen; ältere Modstände können Format 6 nicht lesen. Teste nach dem Update Namen, Anwerben, Rangwechsel durch Wachstum und Tod des Oberhaupts sowie einen Neustart.
 
 ## Wenn nur einzelne Siedlungen arbeiten (0.6.1)
 
@@ -156,7 +160,7 @@ Die Bewohneransicht zeigt Operatoren jetzt eine zusätzliche Arbeitszeile: bevor
 
 ### Abnahme in einer Testwelt
 
-1. Bestehende Welt sichern, Client und Server auf 0.6.4-dev aktualisieren. Eine Creeper-/Illager-Siedlung nahe natürlichem Holz beobachten: Material, Zielkoordinaten, Vorräte und letzter Arbeitserfolg müssen sich ändern; nicht nur die Zielbezeichnung.
+1. Bestehende Welt sichern, Client und Server auf 0.9.0-dev aktualisieren. Eine Creeper-/Illager-Siedlung nahe natürlichem Holz beobachten: Material, Zielkoordinaten, Vorräte und letzter Arbeitserfolg müssen sich ändern; nicht nur die Zielbezeichnung.
 2. Holz hinter einer Wand bzw. unerreichbar oberhalb des Mobs anbieten und einen zweiten erreichbaren Bestand belassen. Neuversuche müssen steigen; das erste Ziel darf nicht sofort erneut gewählt werden.
 3. Lager mit Kirsch- oder Blasseichenholz in Reichweite testen. Zusätzlich ohne erreichbares Holz, aber mit Stein/Erde: andere fehlende Baustoffe müssen gesammelt werden. Ohne jegliche passende Quelle ist eine Blockade korrekt.
 4. Zombies bei Tag und Nacht beobachten, optional Helm ausrüsten. „Warte auf Nacht“ muss bei Nacht enden. Tage vorsimulieren allein ist dafür kein Test.
@@ -169,7 +173,7 @@ Die Bewohneransicht zeigt Operatoren jetzt eine zusätzliche Arbeitszeile: bevor
 Eine fertig planierte 9 × 9-Fläche ist nicht mehr nötig. Die Planung vermisst das Baufeld, wählt die mittlere Geländehöhe und erzeugt einen gespeicherten Arbeitsplan:
 
 1. **Freiräumen:** natürliche Hindernisse und höher liegendes Erdreich im Bauvolumen von oben nach unten entfernen. Alle verfügbaren Arbeiter können helfen. Nutzbarer Aushub wird als reale Fracht abgeliefert.
-2. **Fundament:** tiefere Stellen bis zum Untergrund mit bezahlten Bruchsteinblöcken auffüllen. Die Reihenfolge ist von unten nach oben.
+2. **Fundament:** tiefere Stellen von unten nach oben mit bezahltem Bruchstein, vorhandener Erde oder Planken auffüllen. Auch einfache Fußböden und Zugänge können örtliches Ersatzmaterial nutzen.
 3. **Zugang:** einen drei Blöcke breiten, gestuften Eingang an der Nordseite anlegen, mit höchstens einer Blockhöhe je Stufe.
 4. **Hochbau:** die normale Gebäudevorlage auf dieser Unterlage bauen. Hausposition und Wohnraum beziehen sich auf das Gebäude, nicht auf die Unterkante des Fundaments.
 

@@ -34,10 +34,36 @@ public final class MobRealms implements ModInitializer {
             }
             return net.minecraft.world.InteractionResult.PASS;
         });
+        net.fabricmc.fabric.api.event.player.UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+            if (level.isClientSide() || !(player instanceof net.minecraft.server.level.ServerPlayer sp)
+                    || !controllers.containsKey(sp.level().getServer())) return net.minecraft.world.InteractionResult.PASS;
+            var c = controllers.get(sp.level().getServer());
+            if (!c.state().hasCitizen(entity.getUUID())) return net.minecraft.world.InteractionResult.PASS;
+            var person = c.state().development().person(entity.getUUID());
+            var citizen = c.state().citizen(entity.getUUID());
+            int aptitude = dev.mobrealms.core.ResidentSkills.aptitude(entity.getUUID(), person.role);
+            sp.sendSystemMessage(net.minecraft.network.chat.Component.literal("✦ " + person.name)
+                    .withStyle(net.minecraft.ChatFormatting.GOLD)
+                    .append(net.minecraft.network.chat.Component.literal("  •  " + person.role.name().toLowerCase(java.util.Locale.ROOT)
+                            + "  ★" + (person.rank() + 1) + "  ◆" + aptitude).withStyle(net.minecraft.ChatFormatting.AQUA)));
+            sp.sendSystemMessage(net.minecraft.network.chat.Component.literal("Erfahrung " + person.experience
+                    + "  |  Ziel " + c.goal(entity.getUUID()) + "  |  Lager " + citizen.camp())
+                    .withStyle(net.minecraft.ChatFormatting.GRAY));
+            for (var branch : dev.mobrealms.core.ResidentSkills.Branch.values()) {
+                int levelValue=person.skillLevel(branch);
+                String nodes=(PuffishNpcBridge.unlocked(person,branch,false)?"✦":"○")
+                        +(PuffishNpcBridge.unlocked(person,branch,true)?" ✦":" ○");
+                sp.sendSystemMessage(net.minecraft.network.chat.Component.literal("  " + branch.name().toLowerCase(java.util.Locale.ROOT)
+                        + " " + nodes + "  Lv" + levelValue + "/5  " + person.skillExperience(branch) + " XP")
+                        .withStyle(levelValue>=3?net.minecraft.ChatFormatting.GREEN:net.minecraft.ChatFormatting.GRAY));
+            }
+            return net.minecraft.world.InteractionResult.SUCCESS;
+        });
         CommandRegistrationCallback.EVENT.register((dispatcher,context,selection)->NationCommands.register(dispatcher));
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             try {
                 var config = RealmConfig.load(FabricLoader.getInstance().getConfigDir().resolve("mobrealms.properties"));
+                PuffishNpcBridge.bind();
                 var controller = new RealmController(server, config); controllers.put(server, controller);
                 for (var level : server.getAllLevels()) for (var entity : level.getAllEntities()) controller.loadEntity(entity);
                 LOGGER.info("Mob Realms loaded {} camps", controller.state().camps().size());

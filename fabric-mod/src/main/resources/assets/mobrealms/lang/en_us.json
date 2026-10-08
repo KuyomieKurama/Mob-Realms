@@ -279,5 +279,9 @@
   "phase.mobrealms.access": "Entrance",
   "phase.mobrealms.build": "Structure",
   "phase.mobrealms.complete": "Complete",
-  "screen.mobrealms.construction_phase": "Phase: %s · Site preparation %s / %s"
+  "screen.mobrealms.construction_phase": "Phase: %s · Site preparation %s / %s",
+  "skill.mobrealms.building": "Building",
+  "skill.mobrealms.mining": "Mining",
+  "skill.mobrealms.gathering": "Gathering",
+  "skill.mobrealms.combat": "Combat"
 }
