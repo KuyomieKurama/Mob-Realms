@@ -16,7 +16,9 @@ import urllib.request
 import zipfile
 
 VERSIONS = {"minecraft": "26.3", "loader": "0.19.5", "fabric_api": "0.161.0+26.3",
-            "installer": "1.1.2", "mobrealms": "0.2.0-dev"}
+            "installer": "1.1.2", "mobrealms": "0.9.0-dev", "puffish_skills": "0.19.2"}
+PUFFISH_URL = 'https://cdn.modrinth.com/data/hqQqvaa4/versions/VCmaVWxo/puffish_skills-0.19.2-26.3-fabric.jar'
+PUFFISH_SHA256 = 'ca15bb10b8638a14ef60b47a9cfe854f827f480e8cf43a0f17afc61cde4b6443'
 MANIFEST = "mobrealms-install.json"
 MAVEN = "https://maven.fabricmc.net"
 EULA_URL = "https://www.minecraft.net/eula"
@@ -225,6 +227,12 @@ def verified_download(url, destination):
         checksum.unlink(missing_ok=True)
 
 
+def download_pinned(url, destination, sha256):
+    download(url, destination)
+    require(digest(destination) == sha256, f'Download checksum mismatch: {destination.name}')
+    require(zipfile.is_zipfile(destination), f'Download is not a JAR: {destination.name}')
+
+
 def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
 
@@ -252,6 +260,8 @@ def verify_install(directory, expected_versions=None):
     files = manifest.get('files')
     require(isinstance(files, dict) and files, 'Empty or invalid installation manifest.')
     required = {'server.jar', 'fabric-server-launch.jar', 'mods/mob-realms.jar', 'mods/fabric-api.jar'}
+    if 'puffish_skills' in expected_versions:
+        required.add('mods/puffish-skills.jar')
     require(required.issubset(files), 'Installation manifest omits required files.')
     require(any(p.startswith('libraries/') and 'fabric-loader' in p for p in files), 'Fabric Loader libraries missing from manifest.')
     for relative, expected in files.items():
@@ -261,6 +271,8 @@ def verify_install(directory, expected_versions=None):
         require(digest(path) == expected, f'File changed/corrupt: {relative}. Restore the file or install into a new directory.')
     check_mod(directory / 'mods/mob-realms.jar', 'mobrealms', expected_versions['mobrealms'])
     check_mod(directory / 'mods/fabric-api.jar', 'fabric-api', VERSIONS['fabric_api'])
+    if 'puffish_skills' in expected_versions:
+        check_mod(directory / 'mods/puffish-skills.jar', 'puffish_skills', expected_versions['puffish_skills'])
     seen = set()
     for path in sorted((directory / 'mods').glob('*.jar')):
         data = read_mod(path)
@@ -311,10 +323,19 @@ def install(args):
         (stage / 'mods').mkdir(exist_ok=True)
         api = VERSIONS['fabric_api']
         verified_download(f'{MAVEN}/net/fabricmc/fabric-api/fabric-api/{api}/fabric-api-{api}.jar', stage / 'mods/fabric-api.jar')
+        download_pinned(PUFFISH_URL, stage / 'mods/puffish-skills.jar', PUFFISH_SHA256)
         shutil.copyfile(mod, stage / 'mods/mob-realms.jar')
         # Only a settings bootstrap: does not accept the EULA and does not load a world.
         subprocess.run([java, '-jar', str(stage / 'fabric-server-launch.jar'), '--initSettings'],
                        cwd=stage, check=True, timeout=180)
+        # Civilization chunks must keep ticking when the last player disconnects.
+        properties = stage / 'server.properties'
+        settings = properties.read_text()
+        if 'pause-when-empty-seconds=' in settings:
+            settings = re.sub(r'(?m)^pause-when-empty-seconds=.*$', 'pause-when-empty-seconds=-1', settings)
+        else:
+            settings += '\npause-when-empty-seconds=-1\n'
+        properties.write_text(settings)
         # Hash installed runtime files after bootstrap has resolved/extracted its libraries.
         tracked = [p for p in stage.rglob('*') if p.is_file() and
                    ((p.suffix == '.jar' and (p.parent == stage or p.relative_to(stage).parts[0] in ('libraries', 'versions', 'mods')))

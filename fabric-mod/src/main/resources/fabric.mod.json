@@ -8,13 +8,17 @@
   "entrypoints": {
     "main": [
       "dev.mobrealms.fabric.MobRealms"
+    ],
+    "client": [
+      "dev.mobrealms.client.RealmClient"
     ]
   },
   "depends": {
     "fabricloader": ">=0.19.5",
     "minecraft": "26.3",
     "java": ">=25",
-    "fabric-api": "*"
+    "fabric-api": "*",
+    "puffish_skills": ">=0.19.2"
   },
   "mixins": [
     "mobrealms.mixins.json"

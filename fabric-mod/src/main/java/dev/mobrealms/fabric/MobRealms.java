@@ -21,11 +21,49 @@ import java.util.*;
 
 public final class MobRealms implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("mobrealms");
-    private final Map<MinecraftServer, RealmController> controllers = new IdentityHashMap<>();
+    private static final Map<MinecraftServer, RealmController> controllers = new IdentityHashMap<>();
+    public static RealmController controller(MinecraftServer server) { return controllers.get(server); }
     @Override public void onInitialize() {
+        SettlerEntity.register(); FoundingBannerItem.register();
+        net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.clientboundPlay().register(RealmPayload.TYPE,RealmPayload.CODEC);
+        net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player,level,hand,hit)->{
+            if(!level.isClientSide()&&player instanceof net.minecraft.server.level.ServerPlayer sp&&player.getItemInHand(hand).getItem() instanceof net.minecraft.world.item.BlockItem){
+                var c=controllers.get(sp.level().getServer());if(c!=null&&c.config().protectPlayerBuilds()){
+                    var p=hit.getBlockPos().relative(hit.getDirection());c.state().protect(ChunkKey.fromBlock(RealmController.dimension(sp.level()),p.getX(),p.getZ()));
+                }
+            }
+            return net.minecraft.world.InteractionResult.PASS;
+        });
+        net.fabricmc.fabric.api.event.player.UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+            if (level.isClientSide() || !(player instanceof net.minecraft.server.level.ServerPlayer sp)
+                    || !controllers.containsKey(sp.level().getServer())) return net.minecraft.world.InteractionResult.PASS;
+            var c = controllers.get(sp.level().getServer());
+            if (!c.state().hasCitizen(entity.getUUID())) return net.minecraft.world.InteractionResult.PASS;
+            var person = c.state().development().person(entity.getUUID());
+            var citizen = c.state().citizen(entity.getUUID());
+            int aptitude = dev.mobrealms.core.ResidentSkills.aptitude(entity.getUUID(), person.role);
+            sp.sendSystemMessage(net.minecraft.network.chat.Component.literal("✦ " + person.name)
+                    .withStyle(net.minecraft.ChatFormatting.GOLD)
+                    .append(net.minecraft.network.chat.Component.literal("  •  " + person.role.name().toLowerCase(java.util.Locale.ROOT)
+                            + "  ★" + (person.rank() + 1) + "  ◆" + aptitude).withStyle(net.minecraft.ChatFormatting.AQUA)));
+            sp.sendSystemMessage(net.minecraft.network.chat.Component.literal("Erfahrung " + person.experience
+                    + "  |  Ziel " + c.goal(entity.getUUID()) + "  |  Lager " + citizen.camp())
+                    .withStyle(net.minecraft.ChatFormatting.GRAY));
+            for (var branch : dev.mobrealms.core.ResidentSkills.Branch.values()) {
+                int levelValue=person.skillLevel(branch);
+                String nodes=(PuffishNpcBridge.unlocked(person,branch,false)?"✦":"○")
+                        +(PuffishNpcBridge.unlocked(person,branch,true)?" ✦":" ○");
+                sp.sendSystemMessage(net.minecraft.network.chat.Component.literal("  " + branch.name().toLowerCase(java.util.Locale.ROOT)
+                        + " " + nodes + "  Lv" + levelValue + "/5  " + person.skillExperience(branch) + " XP")
+                        .withStyle(levelValue>=3?net.minecraft.ChatFormatting.GREEN:net.minecraft.ChatFormatting.GRAY));
+            }
+            return net.minecraft.world.InteractionResult.SUCCESS;
+        });
+        CommandRegistrationCallback.EVENT.register((dispatcher,context,selection)->NationCommands.register(dispatcher));
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             try {
                 var config = RealmConfig.load(FabricLoader.getInstance().getConfigDir().resolve("mobrealms.properties"));
+                PuffishNpcBridge.bind();
                 var controller = new RealmController(server, config); controllers.put(server, controller);
                 for (var level : server.getAllLevels()) for (var entity : level.getAllEntities()) controller.loadEntity(entity);
                 LOGGER.info("Mob Realms loaded {} camps", controller.state().camps().size());
@@ -37,6 +75,11 @@ public final class MobRealms implements ModInitializer {
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
             var c = controllers.get(level.getServer()); if (c != null) c.loadEntity(entity);
         });
+        net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.AFTER_DEATH.register((entity,source)->{
+            if(entity instanceof net.minecraft.world.entity.Mob mob && entity.level() instanceof net.minecraft.server.level.ServerLevel level){
+                var c=controllers.get(level.getServer());if(c!=null)c.died(mob);
+            }
+        });
         ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
             var c = controllers.get(level.getServer()); if (c != null) c.unloadEntity(entity);
         });
@@ -46,13 +89,13 @@ public final class MobRealms implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             var c = controllers.get(server); if (c != null) c.save();
         });
-        ServerLifecycleEvents.SERVER_STOPPED.register(controllers::remove);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server->{controllers.remove(server);NationCommands.clearSession();});
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, manager, success) -> {
             var c = controllers.get(server); if (success && c != null) c.reloadDefinitions();
         });
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> dispatcher.register(
             Commands.literal("civ").requires(s -> s.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
-                .then(Commands.literal("admin").executes(ctx -> AdminDialog.open(ctx.getSource(), require(ctx.getSource()), 0))
+                .then(Commands.literal("admin").executes(ctx -> RealmDashboard.openAdmin(ctx.getSource(), require(ctx.getSource())))
                     .then(Commands.literal("page").then(Commands.argument("page", IntegerArgumentType.integer(0, 204))
                         .executes(ctx -> AdminDialog.open(ctx.getSource(), require(ctx.getSource()), IntegerArgumentType.getInteger(ctx, "page")))))
                     .then(Commands.literal("simulate").then(Commands.argument("days", IntegerArgumentType.integer(1, dev.mobrealms.core.RealmSimulation.MAX_PENDING_DAYS))
@@ -86,11 +129,14 @@ public final class MobRealms implements ModInitializer {
                     var source = ctx.getSource(); source.getPlayerOrException();
                     source.getServer().getCommands().performPrefixedCommand(source, "gamemode survival @s"); return 1;
                 })))
+                .then(Commands.literal("tp").then(Commands.argument("settlement", net.minecraft.commands.arguments.UuidArgument.uuid())
+                    .suggests((ctx,builder)->{require(ctx.getSource()).state().camps().forEach(c->builder.suggest(c.id().toString()));return builder.buildFuture();})
+                    .executes(ctx->SettlementTeleport.teleport(ctx.getSource(),require(ctx.getSource()),net.minecraft.commands.arguments.UuidArgument.getUuid(ctx,"settlement")))))
                 .then(Commands.literal("info").executes(ctx -> info(ctx.getSource())))
                 .then(Commands.literal("relations").executes(ctx -> {
                     var c = require(ctx.getSource());
                     for (var a : c.state().camps()) for (var b : c.state().camps())
-                        if (a.id().compareTo(b.id()) < 0) message(ctx.getSource(), "relations", a.id().toString(), b.id().toString());
+                        if (a.id().compareTo(b.id()) < 0) message(ctx.getSource(), "relations", a.id().toString(), b.id().toString(), Component.translatable("treaty.mobrealms." + c.state().development().relation(a.id(),b.id()).treaty.name().toLowerCase(java.util.Locale.ROOT)), c.state().development().relation(a.id(),b.id()).score);
                     if (c.state().camps().size() < 2) message(ctx.getSource(), "no_relations");
                     return 1;
                 }))

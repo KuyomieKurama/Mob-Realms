@@ -1,0 +1,50 @@
+{
+  "building_root": {
+    "x": 0,
+    "y": 0,
+    "definition": "building_root",
+    "root": true
+  },
+  "building_mastery": {
+    "x": 64,
+    "y": 0,
+    "definition": "building_mastery",
+    "root": false
+  },
+  "mining_root": {
+    "x": 0,
+    "y": 64,
+    "definition": "mining_root",
+    "root": true
+  },
+  "mining_mastery": {
+    "x": 64,
+    "y": 64,
+    "definition": "mining_mastery",
+    "root": false
+  },
+  "gathering_root": {
+    "x": 0,
+    "y": 128,
+    "definition": "gathering_root",
+    "root": true
+  },
+  "gathering_mastery": {
+    "x": 64,
+    "y": 128,
+    "definition": "gathering_mastery",
+    "root": false
+  },
+  "combat_root": {
+    "x": 0,
+    "y": 192,
+    "definition": "combat_root",
+    "root": true
+  },
+  "combat_mastery": {
+    "x": 64,
+    "y": 192,
+    "definition": "combat_mastery",
+    "root": false
+  }
+}

@@ -54,9 +54,9 @@ def upgrade(directory, mod):
     with stopped_server(directory):
         previous = json.loads((directory / sm.MANIFEST).read_text())
         versions = previous.get('versions', {})
-        sm.require(all(versions.get(k) == v for k, v in sm.VERSIONS.items() if k != 'mobrealms'),
+        sm.require(all(versions.get(k) == v for k, v in sm.VERSIONS.items() if k not in ('mobrealms', 'puffish_skills')),
                    'Minecraft/Fabric upgrades require a separate installation; only the mod is upgraded here.')
-        sm.require(versions.get('mobrealms') in ('0.1.0-dev', sm.VERSIONS['mobrealms']), 'Unsupported source mod version.')
+        sm.require(versions.get('mobrealms') in ('0.1.0-dev', '0.2.0-dev', '0.5.0-dev', '0.6.0-dev','0.6.1-dev', '0.6.2-dev', '0.6.3-dev', '0.6.4-dev', '0.7.0-dev', '0.7.1-dev', '0.8.0-dev', sm.VERSIONS['mobrealms']), 'Unsupported source mod version.')
         sm.verify_install(directory, versions)
         if sm.digest(mod) == sm.digest(directory / 'mods/mob-realms.jar'):
             print('Identical mod already installed; no changes.'); return None
@@ -67,17 +67,22 @@ def upgrade(directory, mod):
         shutil.copytree(directory, backup)
         print(f'Full backup / Vollständiges Backup: {backup}', flush=True)
         sm.write_json(directory / JOURNAL, {'backup': str(backup), 'target': sm.VERSIONS['mobrealms']})
-        replacements = ['mods/mob-realms.jar', 'server_manager.py', 'start-server.sh', sm.MANIFEST]
+        replacements = ['mods/mob-realms.jar', 'mods/puffish-skills.jar', 'server_manager.py', 'start-server.sh', sm.MANIFEST]
         try:
             scripts = Path(__file__).resolve().parent
             replace_file(scripts / 'server_manager.py', directory / 'server_manager.py')
             replace_file(scripts / 'start-server.sh', directory / 'start-server.sh')
             (directory / 'start-server.sh').chmod(0o755)
             replace_file(mod, directory / replacements[0])
+            with tempfile.TemporaryDirectory(dir=directory.parent) as download_dir:
+                dependency = Path(download_dir) / 'puffish-skills.jar'
+                sm.download_pinned(sm.PUFFISH_URL, dependency, sm.PUFFISH_SHA256)
+                replace_file(dependency, directory / 'mods/puffish-skills.jar')
             current = dict(previous)
             current['versions'] = dict(sm.VERSIONS)
             current['files'] = dict(previous['files'])
             current['files']['mods/mob-realms.jar'] = sm.digest(directory / 'mods/mob-realms.jar')
+            current['files']['mods/puffish-skills.jar'] = sm.digest(directory / 'mods/puffish-skills.jar')
             # Reuse atomic replacement; leave the journal until all replacements are complete.
             with tempfile.TemporaryDirectory(dir=directory.parent) as tmp:
                 manifest = Path(tmp) / sm.MANIFEST; sm.write_json(manifest, current)
@@ -87,7 +92,8 @@ def upgrade(directory, mod):
         except Exception:
             # No world was opened. Restore every changed file; keep backup for manual recovery.
             for relative in replacements:
-                replace_file(backup / relative, directory / relative)
+                if (backup / relative).exists(): replace_file(backup / relative, directory / relative)
+                else: (directory / relative).unlink(missing_ok=True)
             (directory / JOURNAL).unlink(missing_ok=True)
             raise
         print('Upgrade complete. World/settings preserved. Server remains stopped.')

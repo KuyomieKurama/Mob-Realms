@@ -8,3 +8,4 @@
 __pycache__/
 *.pyc
 /mob-realms-server/
+/.agent-team/runs/

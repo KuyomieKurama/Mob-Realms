@@ -4,7 +4,7 @@ import java.util.*;
 
 /** Single-thread-owned domain state. Minecraft objects must never enter this class. */
 public final class RealmSimulation {
-    public enum Mode { ABSTRACT, DETAILED }
+    public enum Mode { ABSTRACT, DETAILED, WAITING }
     public record Camp(UUID id, String species, ChunkKey territory, int x, int y, int z) {
         public Camp {
             Objects.requireNonNull(id); Objects.requireNonNull(species); Objects.requireNonNull(territory);
@@ -16,7 +16,8 @@ public final class RealmSimulation {
                               Map<String, Long> cargo) {}
     public record Lease(UUID citizen, long generation) {}
     private static final class Citizen {
-        final UUID id, camp;
+        final UUID id;
+        UUID camp;
         final double diligence;
         final Stockpile cargo = new Stockpile();
         Mode mode = Mode.ABSTRACT;
@@ -30,12 +31,31 @@ public final class RealmSimulation {
     }
     private final LinkedHashMap<UUID, Camp> camps = new LinkedHashMap<>();
     private final NavigableMap<UUID, Citizen> citizens = new TreeMap<>();
+    private final Map<UUID,Set<UUID>> residents = new HashMap<>();
     private final Map<UUID, Stockpile> stores = new HashMap<>();
     private final Set<ChunkKey> protectedChunks = new HashSet<>();
     private final int maxCamps, maxPopulation, maxDetailed;
     public static final int MAX_PENDING_DAYS = 365;
     private int pendingDays;
     private UUID dayCursor;
+    private final Development development = new Development();
+    public Development development() { return development; }
+    public int population(UUID camp) { return residents.getOrDefault(camp,Set.of()).size(); }
+    public int citizenCount() { return citizens.size(); }
+    public List<CitizenView> residents(UUID camp) { return residents.getOrDefault(camp,Set.of()).stream().map(id -> required(id).view()).toList(); }
+    public void credit(UUID camp, String item, long count) { store(camp).add(item,count); }
+    public boolean consume(UUID camp, Map<String,Long> recipe) {
+        Stockpile stock = store(camp);
+        if (recipe.values().stream().anyMatch(n -> n <= 0)) throw new IllegalArgumentException("recipe");
+        if (recipe.entrySet().stream().anyMatch(e -> stock.count(e.getKey()) < e.getValue())) return false;
+        recipe.forEach(stock::take); return true;
+    }
+    public void recruit(UUID citizen, UUID destination) {
+        camp(destination); Citizen c = required(citizen); deliver(c); UUID source=c.camp;
+        residents.get(source).remove(citizen);c.camp=destination;residents.get(destination).add(citizen);
+        if(citizen.equals(development.town(source).leader))development.town(source).leader=residents.get(source).stream().min(UUID::compareTo).orElse(null);
+        if(development.town(destination).leader==null)development.town(destination).leader=citizen;
+    }
     private long day;
     private long observedWorldDay = -1;
     public RealmSimulation(int maxCamps, int maxPopulation, int maxDetailed) {
@@ -104,17 +124,49 @@ public final class RealmSimulation {
     public void unprotect(ChunkKey chunk) { protectedChunks.remove(chunk); }
     public boolean protectedAt(ChunkKey chunk) { return protectedChunks.contains(chunk); }
     public boolean canFound(ChunkKey chunk) {
-        return camps.size() < maxCamps && !protectedAt(chunk)
+        return camps.size() < maxCamps && !protectedAt(chunk) && !development.claimed(chunk)
                 && camps.values().stream().noneMatch(c -> c.territory().equals(chunk));
     }
     public void found(Camp camp) {
         if (camps.containsKey(camp.id()) || !canFound(camp.territory())) throw new IllegalStateException("Camp conflict/limit");
-        camps.put(camp.id(), camp); stores.put(camp.id(), new Stockpile());
+        camps.put(camp.id(), camp); stores.put(camp.id(), new Stockpile()); residents.put(camp.id(),new LinkedHashSet<>()); development.found(camp.id(),camp.territory());
     }
     public void addCitizen(UUID id, UUID camp, double diligence) {
         camp(camp);
         if (citizens.size() >= maxPopulation || citizens.containsKey(id)) throw new IllegalStateException("Citizen conflict/limit");
-        citizens.put(id, new Citizen(id, camp, diligence));
+        citizens.put(id, new Citizen(id, camp, diligence)); residents.get(camp).add(id); development.person(id).species=camp(camp).species(); development.nameResident(id); if(development.town(camp).leader==null)development.town(camp).leader=id;
+    }
+    /** Admission of an existing wild entity; no spawn and no replacement UUID. */
+    public boolean admit(UUID id, UUID camp) {
+        var town=development.town(camp);
+        if(hasCitizen(id)||citizenCount()>=maxPopulation||population(camp)==0||population(camp)>=town.housing())return false;
+        if(!consume(camp,Map.of("minecraft:bread",4L)))return false;
+        addCitizen(id,camp,.6);development.event("recruitment",camp,day);return true;
+    }
+    /** Adopt an existing wild entity to restart a deserted settlement; no goods are created or spent. */
+    public boolean resettle(UUID id, UUID camp) {
+        var town=development.town(camp);
+        int population=population(camp);
+        if(hasCitizen(id)||citizenCount()>=maxPopulation||population>=2||population>=town.housing())return false;
+        addCitizen(id,camp,.6);
+        town.obstacle="survey";
+        development.event("resettlement",camp,day);
+        return true;
+    }
+    /** A refugee joins a nearly empty camp in exchange for real food already in its stockpile. */
+    public boolean immigrate(UUID id, UUID camp) {
+        var town=development.town(camp);
+        int population=population(camp);
+        if(hasCitizen(id)||citizenCount()>=maxPopulation||population>=2||population>=town.housing())return false;
+        if(!consume(camp,Map.of("minecraft:bread",8L))
+                &&!consume(camp,Map.of("minecraft:wheat_seeds",12L)))return false;
+        addCitizen(id,camp,.6);
+        var person=development.person(id);
+        person.pendingSpawn=true;
+        person.role=population==0?Development.Role.BUILDER:Development.Role.GATHERER;
+        town.obstacle="survey";
+        development.event("immigration",camp,day);
+        return true;
     }
     public Lease activate(UUID id) {
         Citizen c = required(id);
@@ -125,6 +177,9 @@ public final class RealmSimulation {
         c.mode = Mode.DETAILED; c.generation = next;
         return new Lease(id, next);
     }
+    public void waitForDetail(Lease lease){leased(lease).mode=Mode.WAITING;}
+    public void markLoadedWaiting(UUID id){var c=required(id);if(c.mode!=Mode.DETAILED)c.mode=Mode.WAITING;}
+    public void markUnloaded(UUID id){var c=required(id);if(c.mode==Mode.DETAILED)throw new IllegalStateException("Active lease");c.mode=Mode.ABSTRACT;}
     public void deactivate(Lease lease) {
         Citizen c = leased(lease); c.mode = Mode.ABSTRACT;
     }
@@ -152,7 +207,21 @@ public final class RealmSimulation {
         day = next;
     }
     /** Death destroys undelivered cargo; it must not also be dropped by the adapter. */
-    public void removeCitizen(UUID id) { required(id); citizens.remove(id); }
+    public void removeCitizen(UUID id) {
+        UUID camp=required(id).camp;residents.get(camp).remove(id);citizens.remove(id);development.removePerson(id);
+        if(id.equals(development.town(camp).leader))development.town(camp).leader=residents.get(camp).stream().min(UUID::compareTo).orElse(null);
+    }
+    /** Confirmed death is idempotent; chunk unload must never call this method. */
+    public boolean recordDeath(UUID id) {
+        if (!hasCitizen(id)) return false;
+        UUID camp = citizen(id).camp();
+        var town = development.town(camp);
+        town.losses = Math.min(100000, town.losses + 1);
+        town.foodDays = 0;
+        development.event("death", camp, day);
+        removeCitizen(id);
+        return true;
+    }
     void restoreDay(long day) { if (day < 0) throw new IllegalArgumentException("day"); this.day = day; }
     void restoreStock(UUID id, String item, long count) { store(id).add(item, count); }
     void restoreCargo(UUID id, String item, long count) { required(id).cargo.add(item, count); }

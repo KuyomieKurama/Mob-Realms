@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "entity_type": "minecraft:creeper",
+  "gather_weight": 1.3,
+  "regroup_weight": 0.8,
+  "carrying_capacity": 16,
+  "avoids_sun": false,
+  "dimensions": [
+    "minecraft:overworld"
+  ]
+}

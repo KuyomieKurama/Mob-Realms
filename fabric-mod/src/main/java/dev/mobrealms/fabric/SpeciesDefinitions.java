@@ -11,10 +11,13 @@ import java.util.*;
 
 public final class SpeciesDefinitions {
     private Map<String, SpeciesProfile> profiles = Map.of();
+    private Map<String,Set<String>> dimensions = Map.of();
+    public boolean allows(String id,String dimension) { return dimensions.getOrDefault(id,Set.of("minecraft:overworld")).contains(dimension); }
     public SpeciesProfile get(String id) { return Objects.requireNonNull(profiles.get(id), "Unknown species: " + id); }
     public List<String> ids() { return profiles.keySet().stream().sorted().toList(); }
     public void reload(ResourceManager manager) throws IOException {
         Map<String, SpeciesProfile> next = new TreeMap<>();
+        Map<String,Set<String>> places=new HashMap<>();
         var resources = manager.listResources("mobrealms/species", id -> id.getPath().endsWith(".json"));
         if (resources.size() > 256) throw new IOException("Too many species definitions");
         for (var entry : resources.entrySet()) {
@@ -28,10 +31,14 @@ public final class SpeciesDefinitions {
                         j.get("carrying_capacity").getAsInt(), j.get("avoids_sun").getAsBoolean());
                 if (!BuiltInRegistries.ENTITY_TYPE.containsKey(Identifier.parse(profile.entityType())))
                     throw new IllegalArgumentException("Unknown entity type " + profile.entityType());
+                Set<String> allowed=new HashSet<>();
+                if(j.has("dimensions"))for(var d:j.getAsJsonArray("dimensions"))allowed.add(d.getAsString());else allowed.add("minecraft:overworld");
+                if(allowed.isEmpty()||allowed.size()>16)throw new IllegalArgumentException("dimensions");places.put(id,Set.copyOf(allowed));
                 next.put(id, profile);
             } catch (RuntimeException ex) { throw new IOException("Invalid species " + entry.getKey(), ex); }
         }
         if (next.isEmpty()) throw new IOException("No Mob Realms species definitions");
+        dimensions=Map.copyOf(places);
         profiles = Map.copyOf(next); // atomic replacement only after every definition passed
     }
 }

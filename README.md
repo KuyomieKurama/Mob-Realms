@@ -1,46 +1,46 @@
 # Mob Realms
 
-Minecraft mobs establish camps and gather materials, with a server-side simulation designed to grow into civilizations.
+Server-side civilizations for Minecraft Java 26.3: purposeful construction, food and housing, diplomacy, player nations and daily strategy learning.
 
-**Status: M1 development candidate on `feat/m1-foundation`. Not a stable release. Client and dedicated-server gameplay acceptance is still outstanding.**
+**0.9.0-dev — M2–M4 development candidate. Interactive client and multiplayer gameplay acceptance remains outstanding.**
 
-## Documentation
+[Aktueller Stand und Roadmap](STATUS-UND-ROADMAP.md)
+
+## Play and install
 
 - [Spielanleitung (Deutsch)](docs/de_de/spielanleitung.md)
 - [Player guide (English)](docs/en_us/player-guide.md)
-- [Server installieren (Deutsch)](docs/de_de/server-installation.md)
-- [Server installation (English)](docs/en_us/server-installation.md)
-- [Build, tests and dependency provenance](docs/development.md)
-- [Architecture and roadmap](docs/architecture.md)
+- [Server installieren / aktualisieren](docs/de_de/server-installation.md)
+- [Server installation / upgrade](docs/en_us/server-installation.md)
+- [Build and verification](docs/development.md)
+- [Agent team for Claude, Hermes and Codex](docs/agent-team.md)
+- [Architecture and scope](docs/architecture.md)
 - [Changelog](CHANGELOG.md)
+- [Versioning rules](docs/versioning.md)
 
-## Implemented in the development branch
+## Current systems
 
-- Pure Java simulation core with camps, citizen identities, utility scoring and protected claims.
-- Zombie and skeleton datapack profiles; three residents per starter camp.
-- Physical collection of whitelisted dropped materials and internal camp inventories.
-- Abstract delivery of already-carried cargo, without creating resources in unloaded chunks.
-- Versioned, checksummed world saves with a previous-save backup.
-- Admin GUI (`/civ admin`), natural camp founding and a saved/cancellable queue of up to 365 days.
-- Java 25 CI build and twelve dependency-free core test scenarios.
+- Eight profiles: zombies, skeletons, creepers, spiders, endermen, piglins, illagers and human settlers with skins and equipment.
+- Persistent roles and settlement goals: farms → storage → workshops → housing → markets and defenses. Blocks consume stock; food and housing govern births.
+- Finite world resource collection, processing, equipment crafting and treaty-gated barter. Loaded traders travel between nearby settlements.
+- Founding banner, player claims, reputation, paid recruitment, role assignment and consensual player treaties.
+- A navy, gold and teal realm atlas: overview, chunk map, diplomacy, residents and research. `/realm` for players; `/civ admin` adds administrator controls.
+- Daily bounded bandit learning, five technologies, veterans and resource-dependent shields in response to observed fatal arrow attacks.
+- Versioned saves, scheduled background days, protection, natural founding, observer camera and server-wide time-lapse.
 
 ## Build
 
-Minecraft **26.3**, Java **25**, Fabric Loader **0.19.5**, Fabric API **0.161.0+26.3**, Loom **1.18.3**, Gradle **9.7.1**. No Yarn mappings or additional runtime mod dependencies.
+Minecraft **26.3**, Java **25**, Fabric Loader **0.19.5**, Fabric API **0.161.0+26.3**, [Pufferfish's Skills **0.19.2**](https://modrinth.com/mod/skills), Loom **1.18.3**, Gradle **9.7.1**. Official Mojang names; no Yarn.
 
 ```sh
 git clone https://github.com/KuyomieKurama/Mob-Realms.git
 cd Mob-Realms
-git switch feat/m1-foundation
+git switch feat/m2-m4-realms
 ./gradlew test
 ./gradlew build
 ./gradlew runClient
 ```
 
-Development JAR: `fabric-mod/build/libs/mob-realms-0.2.0-dev.jar`. The sources JAR is not an installable mod.
+Install `fabric-mod/build/libs/mob-realms-0.9.0-dev.jar`, Fabric API and Pufferfish's Skills 0.19.2 for Fabric 26.3 in **both client and server** `mods` folders. Do not install the sources JAR or sim-core separately. The installer provisions Java 25 when necessary; see the installation guide to select that JDK for direct Gradle commands.
 
-## Planned
-
-M2 adds production, growth, full building templates, trade and human NPCs. M3 adds player nations and diplomacy. M4 adds learning and technology. M5 adds more species and emergent stories. These are not current features.
-
-All source, tests, resources and documentation are versioned here. Each milestone updates both player guides and states what was actually tested.
+This candidate uses simplified production, chunk-level protection and a territory map without terrain. Physical emissaries, full inter-settlement countries, infection, quests, true siege armies and advanced species behaviors remain future work. Read the guides before upgrading a world.

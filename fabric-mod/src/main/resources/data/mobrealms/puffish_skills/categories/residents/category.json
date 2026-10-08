@@ -1,0 +1,12 @@
+{
+  "title": "Mob Realms: Bewohner",
+  "description": "Berufserfahrung von Zivilisationsbewohnern. Rechtsklick auf einen Bewohner zeigt seinen Fortschritt.",
+  "icon": {
+    "type": "item",
+    "data": {
+      "item": "minecraft:book"
+    }
+  },
+  "background": "minecraft:textures/gui/advancements/backgrounds/stone.png",
+  "unlocked_by_default": false
+}
